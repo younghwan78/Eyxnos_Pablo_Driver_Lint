@@ -1,0 +1,9 @@
+.state/
+reports/
+# Independent owner references/reports are generated local artifacts.
+pablo_is/.state/
+pablo_is/reports/
+gdc/.state/
+gdc/reports/
+__pycache__/
+*.pyc

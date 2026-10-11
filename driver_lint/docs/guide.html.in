@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="과제별 SoC/HW profile과 공통 camera/GDC 구조·코딩 스타일을 검사하는 agent engineering linter 가이드">
+<title>Camera / GDC · Project Profile Lint Guide</title>
+<style>
+:root{--ink:#16263a;--muted:#566980;--line:#dce4ee;--blue:#1762b1;--nav:#101f33;--green:#13765e;--paper:#fff;--wash:#f4f7fb;scroll-behavior:smooth;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;font:15px/1.8 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--wash);color:var(--ink)}a{color:var(--blue);text-underline-offset:3px}code,pre{font-family:"SFMono-Regular",Consolas,monospace;font-size:13px}code{background:#edf2f8;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}pre{background:#112338;color:#edf4ff;padding:20px;border-radius:9px;overflow:auto;line-height:1.7}pre code{background:none;padding:0;color:inherit}aside{position:fixed;inset:0 auto 0 0;width:250px;overflow-y:auto;background:var(--nav);color:#dee9f7;padding:28px 23px}aside .brand{font-size:20px;font-weight:750;line-height:1.5}aside .caption{font-size:12px;color:#9bb5d1;margin:6px 0 28px}aside a{display:block;color:#bacde2;text-decoration:none;font-size:13px;padding:6px 0}aside a:hover,aside a.active{color:#fff}main{max-width:1440px;margin-left:250px;padding:40px 52px 80px}header{padding:26px 0 34px;border-bottom:1px solid var(--line)}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:750;color:var(--blue)}h1{font-size:clamp(28px,3.2vw,43px);letter-spacing:-.045em;line-height:1.3;margin:12px 0 18px}h2{font-size:26px;letter-spacing:-.025em;line-height:1.5;margin:0 0 18px}h3{font-size:18px;margin:28px 0 10px}h4{font-size:16px;margin:12px 0}p{margin:10px 0}.lead{font-size:18px;max-width:880px;color:#405772}.meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.meta span,.tag{font-size:12px;padding:4px 9px;border-radius:5px;background:#e7eff9;color:#294c73}.number{font-size:12px;display:block;color:var(--blue);font-weight:750;letter-spacing:.12em;margin-bottom:5px}section{scroll-margin-top:20px;padding:36px 0;border-bottom:1px solid var(--line)}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:20px 0}.card,.note,.rules article,.diagram{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:20px}.card strong{font-size:22px;display:block}.card small{color:var(--muted)}.note{border-left:4px solid var(--blue);margin:20px 0}.note.warn{border-left-color:#d29a23}.muted{color:var(--muted);font-size:13px}.table{overflow-x:auto;margin:16px 0}table{border-collapse:collapse;width:100%;background:var(--paper)}th,td{text-align:left;vertical-align:top;padding:13px 14px;border-bottom:1px solid var(--line);font-size:14px}th{background:#eaf0f8;font-size:12px;color:#435b78}td:first-child{font-weight:650}ul,ol{padding-left:24px}li{margin:7px 0}.error{background:#fee6e5;color:#a12724}.warning{background:#fff1d0;color:#805415}.info{background:#e4effe;color:#255b96}.toolbar{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0}input,select,button{font:inherit;font-size:13px;border:1px solid #b9c9dc;border-radius:6px;background:#fff;padding:9px 12px;color:var(--ink)}input{min-width:220px}button{cursor:pointer}button.selected{border-color:var(--blue);background:#e4effe}.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.rules article{scroll-margin-top:20px}.rules article[hidden]{display:none}.rule-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.rule-head code{font-weight:750}.rules dl{font-size:13px;margin:0}.rules dt{font-weight:700;margin-top:10px}.rules dd{margin:3px 0;color:#4f627a}.rules h3{margin:9px 0 12px;font-size:16px}.diagram-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.layer{flex:1;min-width:135px;padding:14px;text-align:left}.layer small{display:block;color:var(--muted);font-size:11px}.arrow{color:var(--blue);font-weight:700}.layer-detail{margin-top:18px;background:#f0f5fb;padding:18px;border-radius:7px;min-height:105px}.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}details{background:#fff;border:1px solid var(--line);padding:15px 18px;border-radius:8px;margin:10px 0}summary{font-weight:650;cursor:pointer}.print{float:right}footer{color:var(--muted);font-size:13px;margin-top:30px}a.file{font-family:Consolas,monospace;font-size:12px;overflow-wrap:anywhere}.count{font-size:13px;color:var(--muted)}.chipline{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}.chipline a{font-size:12px;background:#e8eef6;padding:4px 7px;text-decoration:none;border-radius:4px}
+@media(min-width:1680px){main{margin:auto;transform:translateX(100px);max-width:1320px}}
+@media(max-width:1100px){main{padding:30px}.rules{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
+@media(max-width:800px){aside{position:static;width:auto;padding:18px 20px}aside nav{display:flex;gap:14px;overflow:auto}aside a{white-space:nowrap}aside .caption{margin:5px 0 12px}main{margin:0;padding:22px}.cards,.two{grid-template-columns:1fr}.lead{font-size:16px}.print{float:none}}
+@media print{aside,.toolbar,.print{display:none}main{margin:0;padding:0;max-width:none;transform:none}body{font-size:11px;background:#fff}pre{color:#17263b;background:#f3f5f8;white-space:pre-wrap;overflow:visible}.rules{display:block}.rules article{break-inside:avoid;margin:10px 0}.rules article[hidden]{display:block}section{padding:20px 0}.cards{grid-template-columns:repeat(3,1fr)}a{color:inherit}}
+</style>
+</head>
+<body>
+<aside><div class="brand">CAMERA / GDC<br>Driver Lint</div><p class="caption">공통 규칙 + 과제별 HW profile<br>Agent engineering guide · 1.3</p>
+<nav aria-label="문서 목차">
+<a href="#purpose">01 목적과 검사 모델</a><a href="#quickstart">02 바로 실행하기</a><a href="#evidence">03 실제 소스 근거</a><a href="#architecture">04 계층별 책임</a><a href="#rules">05 규칙 {{RULE_COUNT}}개</a><a href="#examples">06 변경 예제</a><a href="#selection">07 변경 선택과 snapshot</a><a href="#claude">08 Claude · OpenCode · Codex</a><a href="#policy">09 정책과 예외 관리</a><a href="#ci">10 Commit 강제 검사와 CI</a><a href="#validation">11 검증 결과와 한계</a><a href="#maintenance">12 확장과 운영</a><a href="#sources">13 참고 자료</a>
+</nav></aside>
+<main>
+<header><button class="print" type="button" onclick="window.print()">인쇄 / PDF 저장</button><div class="eyebrow">ARCHITECTURE · CODING STYLE · REVIEW</div><h1>Agent가 수정해도<br>드라이버의 구조를 유지하기</h1><p class="lead">공통 architecture·coding style과 과제별 HW 선택을 분리한 실행 가능한 린터입니다. 공통 lifecycle·buffer·PM/API 책임을 유지하면서 각 SoC에 맞는 family·IP 구현·register·build 연결을 검사합니다. Exynos2600 / SM-S947B는 현재 소스로 검증한 하나의 예제 profile입니다.</p><div class="meta"><span>현재 예제 profile: {{PROFILE_ID}}</span><span>S5E9965 / erd9965</span><span>Linux 6.12</span><span>Pablo v14_0_0</span><span>GDC v1400</span><span>Python 3.10+ / Perl</span><span>작성·확인 2026-10-09</span></div></header>
+
+<section id="purpose"><span class="number">01 / PURPOSE</span><h2>자동 검사의 역할을 분명히 정합니다</h2><p>Agent에게 “기존 구조를 유지하라”는 설명을 주고, 실행 도구로 그 설명의 주요 조건을 검사합니다. 작업 지침은 <code>driver_lint/CLAUDE.md</code>와 <code>AGENTS.md</code>, 구조·스타일 규칙은 <code>config/rules.json</code>, 공통 엔진은 <code>src/driverlint/</code>입니다. <code>pablo_is/</code>와 <code>gdc/</code>는 각각 policy·HW profile·reference·report·개발 지침을 가지며, 각 policy의 <code>profile</code>이 해당 담당자의 기본 과제를 선택합니다. 수정 내용은 diagnostic의 <code>path:line · rule ID · severity · message · fix</code> 형태로 표시됩니다.</p>
+<div class="cards"><div class="card"><strong>{{RULE_COUNT}}개 규칙</strong><small>Architecture, Style, Safety, Build, Interface, Review</small></div><div class="card"><strong>변경 전후 비교</strong><small>기존 위반을 구분하고 새 위반·삭제·누락을 확인</small></div><div class="card"><strong>담당자별 독립 검사</strong><small>Pablo IS와 GDC의 policy·scope·HW 선택·gate 분리</small></div></div>
+<p><strong>기본 gate는 error에서 실패합니다.</strong> IRQ context, DMA mapping, PM balance처럼 소스 패턴만으로 확정하기 어려운 사항은 warning으로 reviewer에게 전달합니다. <code>--fail-on warning</code>으로 경고까지 gate에 포함할 수 있습니다. checkpatch의 <code>CHECK</code>는 info입니다.</p>
+<div class="note"><strong>기존 소스를 모두 다시 포맷할 필요는 없습니다.</strong><p>전체 audit는 기존 코드의 현황을 보여 줍니다. 평소의 <code>scan</code>은 Git 또는 release snapshot을 기준으로 새 진단을 보고합니다. 구조 검사는 파일 전체를 전후 비교하므로 config 삭제나 SPDX 제거처럼 새 줄만 보는 검사로 놓치기 쉬운 회귀도 확인합니다.</p></div>
+<p>이 린터는 파일 경로와 lexical C 분석을 사용합니다. C compiler AST, 전처리기의 최종 분기, interprocedural call graph, DMA lifetime 또는 HW 동작을 증명하지 않습니다. 빌드·KUnit·실기 결과를 리뷰 자료에 함께 연결해야 합니다.</p></section>
+
+<section id="quickstart"><span class="number">02 / QUICK START</span><h2>소스 릴리스 폴더에서 실행하기</h2><p>모든 검사 예제는 <code>driver_lint/</code>를 배치한 소스 릴리스 루트를 기준으로 합니다. 이 도구 저장소에는 원본 드라이버/커널 소스와 생성 보고서가 없으며, 해당 파일 항목은 텍스트로 표시합니다. pip 패키지는 필요하지 않습니다. Python 3.10 이상과 Perl을 사용하며, checkpatch는 적용 릴리스의 <code>kernel-6.12/scripts/checkpatch.pl</code>을 실행합니다.</p>
+<div class="table"><table><thead><tr><th>담당</th><th>독립 폴더와 문서</th><th>검사 범위</th></tr></thead><tbody>
+<tr><td>Pablo IS</td><td><a href="../pablo_is/docs/index.html">Pablo IS 전용 HTML</a> · <a href="../pablo_is/config/policy.json">policy</a> · <a href="../pablo_is/config/profiles/s947b.json">HW profile</a></td><td>camera 영역에서 GDC production/KUnit 경로 제외. IS core/interface/ischain/HW/sensor/library 담당</td></tr>
+<tr><td>GDC</td><td><a href="../gdc/docs/index.html">GDC 전용 HTML</a> · <a href="../gdc/config/policy.json">policy</a> · <a href="../gdc/config/profiles/s947b.json">HW profile</a></td><td>post/gdc + GDC KUnit. GDC IP/register 선택만 검증; Pablo family 선택 없음</td></tr>
+</tbody></table></div>
+<pre><code># 각 개발자는 담당 드라이버만 실행
+python3 driver_lint/pablo_is/lint.py doctor
+python3 driver_lint/pablo_is/lint.py scan
+python3 driver_lint/gdc/lint.py doctor
+python3 driver_lint/gdc/lint.py scan
+
+# HW/build 연결 확인도 독립 실행
+python3 driver_lint/pablo_is/lint.py scan --profile-only --checkpatch off
+python3 driver_lint/gdc/lint.py scan --profile-only --checkpatch off
+
+# 두 드라이버에 걸친 변경: 독립 결과를 함께 확인
+python3 driver_lint/lint.py scan
+
+# 담당자별 HTML 결과 (Pablo IS도 같은 방식)
+python3 driver_lint/gdc/lint.py scan --format html \
+  --output driver_lint/gdc/reports/change.html
+
+# 새 release 원본: 반드시 수정 전에 담당 reference 준비
+python3 driver_lint/gdc/lint.py snapshot create</code></pre>
+<p><strong>공유 파일:</strong> Kconfig, BUILD.bazel, post/Makefile, board fragment 두 개는 양쪽의 metadata 경로입니다. 각 profile에 등록한 해당 드라이버의 조건만 검증합니다. 공유 파일의 문법/스타일 오류는 양쪽 담당에 영향을 줄 수 있습니다. 공통 helper/API를 변경하면 해당하는 양쪽 검사와 review를 연결합니다.</p>
+<p>현재 원본 1,813개 파일은 Pablo IS 1,756개 / GDC 62개로 나뉘며 공유 metadata 5개가 겹칩니다. 담당 production/KUnit source는 겹치지 않습니다. 원본 reference는 변경하지 않고 승인된 original object에서 범위별 manifest를 파생했습니다. <code>driver_lint/lint.py</code>는 이제 두 독립 검사를 조정하며, 기존 combined policy는 명시적 <code>--policy</code> 호환과 reference migration용으로 남겼습니다.</p>
+<div class="table"><table><thead><tr><th>Exit code</th><th>뜻</th><th>다음 행동</th></tr></thead><tbody><tr><td>0</td><td>선택한 gate 기준에서 통과</td><td>warning과 실행 engine 목록을 확인하고 빌드·테스트 진행</td></tr><tr><td>1</td><td>선택한 severity 이상의 위반 존재</td><td>코드를 수정하거나 reviewer가 판단할 좁은 예외를 작성</td></tr><tr><td>2</td><td>도구·reference·경로·encoding 등 검사 실행 실패</td><td>검사 환경을 복구하고 재실행. 검사 통과로 취급하지 않음</td></tr></tbody></table></div>
+<p class="muted">기본 <code>--checkpatch auto</code>는 변경 검사에서 bundled checkpatch를 실행합니다. <code>--all</code>/<code>--files</code>의 전체 파일 검사는 기본적으로 외부 checkpatch를 생략하며, 필요하면 <code>--checkpatch on</code>을 명시합니다. 모든 보고서는 실제 실행 engine과 생략 이유를 표시합니다.</p>
+<p class="muted"><code>--output</code>은 각 담당의 <code>driver_lint/pablo_is/reports/</code> 또는 <code>driver_lint/gdc/reports/</code> 아래에 보고서를 씁니다. 조정 명령은 <code>driver_lint/reports/</code>를 사용합니다. 보고서 출력이 driver, lint 코드, Claude 설정 또는 reference를 덮어쓰는 실수를 막습니다.</p></section>
+
+<section id="evidence"><span class="number">03 / SOURCE EVIDENCE · CURRENT EXAMPLE</span><h2>S947B의 실제 선택 경로에서 규칙을 도출했습니다</h2><p>사용자가 지정한 기종은 Galaxy S26+ SM-S947B입니다. 소스에서 확인한 내부 SoC 이름은 S5E9965, board는 erd9965입니다. 기존 루트 <code>CLAUDE.md</code>의 “S25 Ultra” 표기는 이 과제 설명에 맞게 수정했습니다.</p>
+<div class="table"><table><thead><tr><th>관찰</th><th>로컬 소스 근거</th><th>린터에 반영</th></tr></thead><tbody>
+<tr><td>Camera = v14_0_0</td><td><a class="file" href="../../exynos/external-modules/camera/camera/Kconfig">camera/Kconfig</a>의 <code>PABLO_V14_0_0 depends on SOC_S5E9965</code><br><a class="file" href="../../exynos/external-modules/camera/BUILD.bazel">camera/BUILD.bazel</a>의 ERD9965/ERD9965_16K selector</td><td>ARCH007/008, BUILD005</td></tr>
+<tr><td>GDC = v1400</td><td><a class="file" href="../../exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment">erd9965.fragment</a>와 <a class="file" href="../../exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment">16k.fragment</a>의 <code>CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ=y</code></td><td>BUILD003/004</td></tr>
+<tr><td>Kbuild/DDK source 연결</td><td><a class="file" href="../../exynos/external-modules/camera/camera/post/gdc/Makefile">gdc/Makefile</a>와 camera BUILD.bazel의 v1400 API/register source</td><td>BUILD005</td></tr>
+<tr><td>MFC VOTF adapter 사용</td><td>두 board fragment의 <code>CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API=y</code></td><td>BUILD003, 공통 core/adapter 경계 설명</td></tr>
+<tr><td>GDC core는 HW API 호출</td><td><a class="file" href="../../exynos/external-modules/camera/camera/post/gdc/pablo-gdc-core.c">pablo-gdc-core.c</a>가 <code>pablo-hw-api-gdc.h</code>를 포함<br><a class="file" href="../../exynos/external-modules/camera/camera/post/gdc/pablo-hw-api-gdc-v1400.c">v1400.c</a>에서 <code>GDC_SET_F → PMIO_SET_F</code></td><td>ARCH002/003, PMIO 우회 감지</td></tr>
+<tr><td>Pablo와 개별 IP 버전은 다름</td><td><a class="file" href="../../exynos/external-modules/camera/camera/hardware/Makefile">hardware/Makefile</a>: PABLO_V14_0_0에서 <code>api/is-hw-api-yuvp-v13_0.o</code></td><td>profile에서 family, GDC, YUVP version domain을 따로 선택하고 구현/register 및 build 연결을 검사</td></tr>
+<tr><td>스타일 기준</td><td><a class="file" href="../../kernel-6.12/.clang-format">kernel .clang-format</a>의 tab/indent 8, ColumnLimit 80와 bundled checkpatch</td><td>기본 tab indent, 100열 경고, formatter 비교는 선택 실행</td></tr>
+<tr><td>Legacy source encoding 1개</td><td><a class="file" href="../../exynos/external-modules/camera/camera/sensor/module_framework/cis/is-cis-4ha-setB.h">is-cis-4ha-setB.h</a>의 CP949 주석</td><td>원본 CP949를 읽고 유지. 새 파일은 UTF-8, 임의 변환은 STYLE009</td></tr>
+</tbody></table></div>
+<div class="note warn"><strong>Family와 IP의 실제 선택을 과제별 profile에 기록합니다.</strong><p>IP 재사용 버전은 HW/build 근거로 판단합니다. 새 SoC의 family/IP 버전 변경은 profile과 HW 구현을 함께 갱신하는 정상 작업입니다. 또한 KUnit의 기존 구현 파일 include, HW API의 기존 <code>pablo-gdc.h</code>/<code>is-hw.h</code> type 공유, hw-control의 일부 SFR 의존을 일괄 금지하지 않습니다. 구조 변경의 신규 의존만 지정한 경계 규칙으로 확인합니다.</p></div></section>
+
+<section id="architecture"><span class="number">04 / LAYER RESPONSIBILITY</span><h2>기존 호출 방향을 reviewer와 agent가 공유합니다</h2><p>버튼을 누르면 각 계층의 역할과 허용되는 의존을 볼 수 있습니다. 그림은 주된 제어 흐름입니다. 현재 코드의 모든 include 관계가 엄격한 단방향 DAG라는 뜻은 아닙니다.</p>
+<div class="diagram"><div class="diagram-row"><button class="layer selected" data-layer="core"><b>CORE / V4L2</b><small>device · group · resource · buffer</small></button><span class="arrow" aria-hidden="true">→</span><button class="layer" data-layer="control"><b>HW CONTROL</b><small>is-hw / pablo-hw · ischain</small></button><span class="arrow" aria-hidden="true">→</span><button class="layer" data-layer="api"><b>HW API</b><small>target 구현 · PMIO</small></button><span class="arrow" aria-hidden="true">→</span><button class="layer" data-layer="register"><b>REGISTER</b><small>SFR · bit/field description</small></button></div><div id="layer-detail" class="layer-detail" role="status"><strong>Core / V4L2</strong><p>사용자 요청, queue/buffer 상태, stream lifecycle, runtime PM과 scheduling 정책을 담당합니다. GDC는 공통 <code>camerapp_hw_*</code> API를 호출하며 직접 register offset이나 PMIO_SET_F를 추가하지 않습니다.</p></div></div>
+<div class="two"><div><h3>Camera Pablo</h3><pre><code>camera/is-*.c, interface/, include/
+  → ischain/&lt;project-selected-family&gt;/
+  → hardware/is-hw-*.c, pablo-hw-*.c
+  → hardware/api/*
+  → hardware/sfr/*
+
+sensor/, vendor/, lib/, icpu/
+  기존 공통 helper/type/adapter 경로 유지</code></pre></div><div><h3>GDC</h3><pre><code>pablo-gdc-core.c / pablo-gdc.h
+  V4L2 M2M · vb2 · jobs · PM · IRQ dispatch
+  → pablo-hw-api-gdc.h
+  → pablo-hw-api-gdc-v&lt;selected-IP-version&gt;.c
+  → pablo-hw-reg-gdc-v&lt;compatible-register-version&gt;.h
+  → PMIO / HW
+
+VOTF MFC adapter / HDR10+ helper
+  해당 과제의 config·adapter와 HW 구현 선택</code></pre></div></div>
+<p><code>layer_patterns</code>는 위에서부터 첫 match로 분류합니다. testing와 register 경로를 먼저 분류하고, GDC version API와 HDR10+ 구현을 <code>gdc-api</code>로 지정한 뒤 나머지 GDC 공통 경로를 <code>gdc-core</code>로 분류합니다. 잘못된 경로 분류는 rule의 오탐 원인이므로 새 IP를 추가할 때 먼저 확인해야 합니다.</p></section>
+
+<section id="rules"><span class="number">05 / RULE CATALOG</span><h2>{{RULE_COUNT}}개 프로젝트 규칙과 탐지 범위</h2><p>규칙 카드의 “제한”은 reviewer가 반드시 함께 고려해야 하는 범위입니다. 이 표는 공유 <code>config/rules.json</code>의 기본 severity로 생성합니다. 실제 severity/예외는 각 담당 policy가 적용하며, rule ID/탐지 엔진을 공유합니다. checkpatch의 상세 type은 별도로 <code>CHECKPATCH.&lt;TYPE&gt;</code>, 선택 formatter 결과는 <code>CLANG_FORMAT</code>으로 표시합니다.</p>
+<div class="toolbar"><input id="rule-query" aria-label="규칙 검색" placeholder="규칙 / 함수 / 설명 검색"><select id="rule-group" aria-label="규칙 종류"><option value="">모든 종류</option><option>Architecture</option><option>Style</option><option>Safety</option><option>Build</option><option>Interface</option><option>Review</option></select><select id="rule-level" aria-label="규칙 심각도"><option value="">모든 심각도</option><option>error</option><option>warning</option></select><button id="rule-reset" type="button">검색 초기화</button></div><p id="rule-count" class="count" role="status">{{RULE_COUNT}} / {{RULE_COUNT}} rules</p><div class="rules">{{CATALOG}}</div>
+<h3>checkpatch와 formatter의 차이</h3><p>checkpatch는 새 patch의 brace, spacing, 선언, kernel API 사용 등 기존 Linux 규칙을 검사합니다. 환경별 <code>~/.checkpatch.conf</code>가 결과를 바꾸지 않도록 임시 작업 폴더에 빈 설정을 둡니다. 프로젝트 규칙은 계층·과제별 HW 선택·빌드 연결·리뷰 신호를 추가합니다.</p><p><code>--clang-format</code>은 <code>kernel-6.12/.clang-format</code>의 설정을 명시해서 replacement XML만 비교합니다. camera 폴더가 kernel 트리 바깥에 있기 때문에 단순한 <code>--style=file</code>의 상위 폴더 검색에 의존하지 않습니다. C/H를 직접 수정하거나 전체 파일을 자동 재포맷하지 않습니다. formatter가 설치되지 않았는데 요청한 경우 exit 2입니다.</p><p>checkpatch의 patch 제출 메타데이터 일부는 이 gate에서 제외합니다. <code>Signed-off-by</code>와 <code>Change-Id</code>는 실제 patch 제출 단계에서 별도로 확인하세요. C/H SPDX는 STYLE006이 관리하므로, 현재 소스의 C++ 형식 SPDX 첫 줄에 대한 checkpatch의 별도 경고는 제외했습니다.</p></section>
+
+<section id="examples"><span class="number">06 / CHANGE EXAMPLES</span><h2>현재 S947B profile의 변경 예제</h2><p>아래 v14/v1400 경로는 현재 예제의 선택값입니다. 다른 과제에서는 해당 profile이 선택한 family/IP 구현으로 바꾸세요.</p>
+<h3>GDC core에 레지스터 쓰기를 추가한 경우</h3><div class="two"><div><p><span class="tag error">ARCH002 / ARCH003</span> core에 들어간 변경</p><pre><code>/* pablo-gdc-core.c */
+#include "pablo-hw-reg-gdc-v1400.h"
+
+/* job 처리 경로 안에 새로 추가 */
+PMIO_SET_F(pmio, GDC_R_IP_PROCESSING,
+           GDC_F_IP_PROCESSING, 1);</code></pre></div><div><p><span class="tag info">수정 방향</span> 공통 API를 통한 호출</p><pre><code>/* 기존 core의 job 경로 */
+camerapp_hw_gdc_start(pmio, clb);
+
+/* HW 변경은 기존 target API에 구현 */
+/* pablo-hw-api-gdc-v1400.c의 관련 함수 */
+GDC_SET_F(pmio, GDC_R_IP_PROCESSING,
+          GDC_F_IP_PROCESSING, 1);</code></pre></div></div>
+<p class="muted">위 예제는 수정 위치를 설명하는 코드입니다. 실제 start/reset 순서와 field 값은 해당 함수, HW 문서와 KUnit을 확인해야 합니다. core/control/API에 비슷한 helper를 중복 생성하기 전에 기존 공통 함수를 찾아 재사용하세요.</p>
+<h3>Agent가 GDC 파일 버전을 혼동한 경우</h3><pre><code># v1400 API에서 아래 header를 추가하면 ARCH006 error
+#include "pablo-hw-reg-gdc-v1500.h"
+
+# 올바른 target register layout
+#include "pablo-hw-reg-gdc-v1400.h"
+
+# 다른 SoC의 is-v15_0_0 파일을 수정하면 ARCH007 warning
+# 현재 s947b profile의 선택: ischain/is-v14_0_0/
+# 차기 과제는 해당 profile이 선택한 family 구현을 수정</code></pre>
+<h3>spinlock 안에 sleep 동작을 추가한 경우</h3><div class="two"><div><pre><code>spin_lock_irqsave(&amp;gdc-&gt;slock, flags);
+msleep(20); /* SAFE003 warning */
+spin_unlock_irqrestore(&amp;gdc-&gt;slock, flags);</code></pre></div><div><p>필요한 상태를 lock 안에서 복사한 뒤, atomic context 밖의 기존 work/thread 경로에서 기다리는 방향을 검토합니다. lock을 단순히 이동하면 race가 생길 수 있으므로 state ownership과 IRQ 호출 문맥을 함께 설명해야 합니다.</p></div></div>
+<h3>Agent의 리뷰 설명 예시</h3><pre><code>목적: GDC reset timeout 오류 처리 개선
+계층: pablo-hw-api-gdc-v1400.c의 기존 reset 경로
+검사: python3 driver_lint/lint.py scan → 0 errors, 1 warning
+경고: SAFE004; 종료 조건은 GDC_RESET_WAIT_CNT로 제한됨을 확인
+빌드/KUnit: 실행한 command, config, 결과를 기재
+실기: stream on/off 반복, timeout 주입, suspend/resume 결과를 기재
+남은 확인: 실행하지 못한 검증과 그 이유를 기재</code></pre>
+<p class="muted">이 결과는 작성 형식 예시이며 실제 검증 성공을 주장하는 기록이 아닙니다. 지금 과제에서 수행한 검증은 아래 검증 결과 절에 따로 기록합니다.</p>
+<details><summary>원본 driver를 건드리지 않고 위반 감지 예제 실행</summary><pre><code>python3 driver_lint/scripts/demo.py</code></pre><p>임시 fixture에서 깨끗한 source의 exit 0, GDC core에 MMIO 호출을 추가한 뒤 exit 1, 실제 bundled checkpatch 실행, Stop 차단과 반복 guard를 확인합니다. 결과를 <a href="../reports/example-violation.html">예제 HTML 보고서</a>와 JSON으로 저장합니다. 이 보고서는 실제 driver에 주입한 오류가 아닙니다.</p></details></section>
+
+<section id="selection"><span class="number">07 / CHANGE SELECTION</span><h2>검사 대상과 기준 소스를 명시합니다</h2><div class="table"><table><thead><tr><th>Command</th><th>기준 → 검사할 내용</th><th>사용 시점</th></tr></thead><tbody>
+<tr><td><code>scan</code> / <code>scan --changed</code></td><td>루트가 Git이면 HEAD → 현재 worktree + source additions. Git이 없으면 기본 snapshot → 현재 소스</td><td>개발 중</td></tr>
+<tr><td><code>scan --staged</code></td><td>Git HEAD → index의 실제 bytes. unstaged source edit는 검사 내용에 섞지 않음</td><td>commit 전 patch 확인</td></tr>
+<tr><td><code>scan --base REF</code></td><td>지정 commit → worktree. 이미 commit된 branch 변경도 포함</td><td>개발 중 branch 변경 진단. 최종 CI는 committed gate 사용</td></tr>
+<tr><td><code>scripts/commit_gate.py</code></td><td>HEAD → 실제 index. 설정/profile/build/source 모두 Git blob 사용</td><td>pre-commit 강제 검사</td></tr>
+<tr><td><code>scripts/run_ci.py --base REF</code></td><td>REF → committed HEAD. 승인된 runner와 common lock 사용</td><td>보호된 bootstrap으로 실행하는 서버 필수 CI</td></tr>
+<tr><td><code>scan --since PATH</code></td><td>지정 snapshot → 현재 source, 추가·삭제 포함</td><td>소스 archive 또는 Git 없는 release</td></tr>
+<tr><td><code>scan --files PATH ...</code></td><td>명시한 파일/폴더 전체. 기존 진단도 표시</td><td>개별 파일 현황 조사, 빠른 분석</td></tr>
+<tr><td><code>scan --profile-only</code></td><td>profile의 보호 source와 build/fragment 파일을 현재 내용 전체로 검사. ARCH006/008, BUILD003/004/005만 실행</td><td>새 과제/HW 선택 설정 확인. 스타일·일반 변경 gate와 별개</td></tr>
+<tr><td><code>scan --all</code></td><td>scope 전체. 기존 진단도 표시</td><td>첫 도입, policy 변경, 현황 조사</td></tr>
+</tbody></table></div>
+<p>검사 범위는 활성 <code>profile.scope</code>로 정합니다. 현재 예제는 camera 모듈의 C/H/Makefile/Kconfig/Bazel source와 erd9965 4K·16K fragment 두 개입니다. Android platform 전체를 스캔하지 않습니다. 범위 밖의 파일을 명시적으로 <code>--files</code>에 넣어 검사 대상이 0개가 되면 exit 2입니다. 일반 변경 검사에서 scope 내 수정이 0개인 경우는 exit 0과 “No driver changes” note를 반환합니다.</p>
+<h3>Snapshot은 source 기준선이며 경고 허용 목록이 아닙니다</h3><pre><code>driver_lint/&lt;component&gt;/.state/reference.json
+  담당 source path → SHA-256
+  생성 시각 / policy hash / scope hash
+
+driver_lint/.state/objects/&lt;sha256&gt;.gz
+  원본 source bytes의 gzip object
+
+# 기준선 정보 확인
+python3 driver_lint/gdc/lint.py snapshot info
+
+# 인간이 변경 내용을 검토하고 다음 작업 기준으로 승인한 뒤에만 갱신
+python3 driver_lint/gdc/lint.py snapshot create --replace</code></pre>
+<p>현재 폴더는 Git 저장소가 아니므로 {{SOURCE_FILE_COUNT}}개 파일, 약 131 MiB의 원본 reference를 유지하고, 각 담당 manifest를 original object에서 파생했습니다. 두 manifest는 기존 shared objects를 읽으며 담당 scope/hash를 독립 기록합니다. objects는 내용 hash별로 저장하고, 파일이 바뀐 경우 필요한 과거 object를 읽습니다. scan은 snapshot을 다시 쓰지 않습니다. <code>--replace</code>는 이전 manifest를 <code>reference.json.previous</code>에 보관합니다. scope가 달라진 reference는 검사에 사용할 수 없습니다.</p>
+<div class="note warn"><strong>Agent 수정 후에 처음 snapshot을 만들면 그 수정이 기준선에 포함됩니다.</strong><p>Git 없는 새 checkout은 수정 전에 초기화해야 합니다. 현재 검사 실패를 해소하기 위해 reference를 덮어쓰면 안 됩니다. 이미 수정된 release에는 원본 archive/별도 checkout에서 만든 기준선을 가져오거나 해당 파일을 <code>--files</code>로 전체 검사하세요.</p></div>
+<h3>기존 위반과 새 위반의 비교 방식</h3><p>프로젝트 규칙은 같은 파일의 before/after를 검사하고 <code>path + rule + message + evidence</code>의 발생 횟수를 비교합니다. 줄 번호가 이동해도 같은 위반을 새로 발행하지 않습니다. 같은 잘못된 statement를 추가 복제한 경우는 발생 횟수가 늘어나므로 새 진단을 발행합니다. 기본 공백/줄 길이 검사는 변경된 줄에 집중하고, build mapping·SPDX·파일 끝 LF처럼 파일 전체의 조건은 전후 비교합니다.</p><p>public header, export, register/tuning table, target 외 version, 신규 C source 및 큰 diff에는 변경 자체에 대한 review warning을 추가합니다. 따라서 기존 위반이 그대로여도 인터페이스/데이터/선택 경로의 변경은 reviewer에게 보입니다.</p>
+<p class="muted">Git의 rename은 삭제+추가로 다루며 source 누락을 숨기지 않습니다. scope 안의 ignored source additions도 포함합니다. 현재 root가 어떤 상위 Git 저장소의 부분 폴더일 뿐이면 release snapshot 모드를 사용합니다. 검사 대상 source symlink와 workspace 밖 경로는 명시적 실패입니다.</p></section>
+
+<section id="claude"><span class="number">08 / AGENT INTEGRATION</span><h2>Claude Code · OpenCode · Codex에 같은 검사를 연결합니다</h2>
+<p>각 agent의 event에 검사 결과를 전달하고, 모든 도구의 commit은 <a href="#git-gate">Git pre-commit</a>에서 검사합니다. 선택한 담당의 policy/HW profile을 동일하게 사용하며, architecture 규칙 구현은 공유 Python 엔진에 있습니다. 담당별 client adapter를 따로 설치·제거할 수 있습니다.</p>
+<div class="table"><table><thead><tr><th>도구</th><th>프로젝트 지침과 설정</th><th>수정 중 피드백</th><th>Commit 강제 검사</th></tr></thead><tbody>
+<tr><td>Claude Code</td><td>CLAUDE.md, .claude/rules/, .claude/settings.json</td><td>SessionStart / PostToolUse / PostToolUseFailure / Stop</td><td rowspan="3">공통 Git pre-commit → 실제 index 검사<br>서버 필수 CI → BASE..HEAD 검사</td></tr>
+<tr><td>OpenCode</td><td>AGENTS.md, .opencode/plugins/driver-lint-&lt;component&gt;.js</td><td>V1 tool.execute.after<br>V2 ctx.tool.hook("execute.after")</td></tr>
+<tr><td>Codex</td><td>AGENTS.md, .codex/hooks.json</td><td>SessionStart / PostToolUse / Stop</td></tr>
+</tbody></table></div>
+<h3 id="claude-install">Claude Code 설치</h3><p>연동 파일은 <a href="../integration/claude-settings.json">event template</a>, <a href="../integration/pablo-is-rule.md">Pablo IS 지침</a>, <a href="../integration/gdc-rule.md">GDC 지침</a>입니다. installer가 프로젝트 <code>.claude/settings.json</code>의 기존 key/hook을 유지하면서 담당별 lint hook을 병합하고, path별 지침을 <code>.claude/rules/pablo-is-lint.md 및 gdc-lint.md</code>에 추가합니다. 기존 <code>.claude/settings.local.json</code>은 유지합니다.</p>
+<pre><code># 프로젝트 연동 설정 설치 또는 같은 설정으로 재확인
+python3 driver_lint/scripts/install_claude.py --component all
+
+# Claude Code의 새 세션에서 활성 설정 확인
+/hooks
+
+# 이 도구가 추가한 hook과 동일한 지침 파일만 제거
+python3 driver_lint/scripts/install_claude.py --remove</code></pre>
+<div class="table"><table><thead><tr><th>Event</th><th>동작</th><th>결과 전달</th></tr></thead><tbody>
+<tr><td>SessionStart</td><td>활성 profile의 과제·family·IP별 버전과 공통/HW 책임 지침 전달, release snapshot 준비 확인</td><td>additionalContext. 기준선을 자동 생성하지 않음</td></tr>
+<tr><td>PostToolUse<br>Edit / Write / MultiEdit / Bash</td><td>파일 편집이 scope에 들어오면 전체 현재 변경 검사. Bash도 snapshot/Git에서 변경 확인</td><td>error면 decision:block + reason + additionalContext. 이미 실행된 edit를 되돌리지는 않음</td></tr>
+<tr><td>PostToolUseFailure</td><td>실패한 Bash/edit가 일부 source를 바꾼 경우도 확인</td><td>추가 문맥으로 오류/경고 전달. 이벤트 자체가 tool 결과를 취소하지 않음</td></tr>
+<tr><td>Stop</td><td>scope의 누적 변경을 다시 검사. Edit matcher를 통하지 않은 변경도 여기서 확인</td><td>error/운영 실패면 decision:block으로 수정 요청. warning은 reviewer에게 표시</td></tr>
+</tbody></table></div>
+<p class="muted">event input/output과 설정 위치는 <a href="https://code.claude.com/docs/en/hooks">Claude Code 공식 hook 문서</a>와 <a href="https://code.claude.com/docs/en/settings">공식 settings 문서</a>를 확인했습니다. 위 표의 검사 범위와 retry 정책은 이 프로젝트의 구현입니다.</p>
+<h3>재시도 guard와 CI의 책임</h3><p>Stop은 첫 실패에서 완료를 차단하고 agent에게 수정 기회를 줍니다. <code>stop_hook_active=true</code> 상태에서 다시 실패하면 같은 요청이 무한 반복되지 않도록 완료를 허용하면서 <strong>“Driver lint still FAILS”</strong>를 표시합니다. 이 동작은 검사 통과가 아닙니다. Git/CI gate는 exit 1/2를 계속 거부합니다.</p><p>Hooks는 Claude 작업 중 빠른 피드백을 주는 연결입니다. 승인된 lint 코드와 변경 branch의 driver를 분리해 실행하는 CI와 policy/config 변경의 필수 human review를 최종 merge 조건으로 적용합니다. <code>--component pablo-is|gdc|all</code>로 담당 hook을 선택하며 설치/제거 시 다른 담당의 hook을 유지합니다.</p>
+<h3>Hook 구현의 실무 조건</h3><p>Hook은 JSON을 stdin에서 읽고 <code>tool_input.file_path</code>를 검사합니다. payload에 들어 있는 shell command를 실행하거나 <code>eval</code>하지 않습니다. 실행 script는 <code>CLAUDE_PROJECT_DIR</code>에 고정해서 작업 도중 cwd가 바뀌어도 같은 규칙을 사용합니다. Edit는 scope 밖에서 빠르게 종료하며 Bash/Stop은 변경 전체를 확인합니다.</p>
+<details><summary>Claude 연동이 보이지 않을 때</summary><ol><li>작업 root에서 새 Claude Code 세션을 시작하고 <code>/hooks</code>로 event와 command를 확인합니다.</li><li><code>python3 driver_lint/lint.py doctor</code>로 snapshot, Perl과 checkpatch를 확인합니다.</li><li>상위/로컬/managed settings의 hook 제한 또는 <code>disableAllHooks</code> 상태를 확인합니다.</li><li>현재 Claude 버전의 공식 hook 문서와 설치한 JSON schema를 비교합니다. 이 구현의 판단 방식은 2026-10-09 공식 문서를 확인했습니다.</li></ol><p>로컬에서는 hook stdin/JSON과 설정 병합을 검사했습니다. 실제 로그인된 Claude 대화 세션에서의 UI·auto retry 실행은 별도 확인 항목입니다.</p></details>
+
+<h3 id="codex-install">Codex 설치</h3>
+<pre><code>codex --version
+python3 driver_lint/scripts/install_agents.py --codex --component all
+
+# 작업 root에서 새 Codex 세션 시작
+codex
+# Codex 안에서 프로젝트 hook 정의를 검토하고 trust
+/hooks</code></pre>
+<p><a href="../scripts/install_agents.py">installer</a>는 <a href="../integration/codex-hooks.json">Codex template</a>을 <code>.codex/hooks.json</code>에 병합하고 root <code>AGENTS.md</code>에 이 도구의 지침 block을 추가합니다. 다른 hook, 지침과 사용자 전역 설정은 유지합니다. <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">AGENTS.md 적용 방식은 공식 문서</a>를 따릅니다.</p>
+<p><strong>Codex의 project trust와 hook 정의 trust를 완료해야 실제 hook이 실행됩니다.</strong> non-managed hook은 <code>/hooks</code>에서 정의를 검토하고 trust하도록 공식 제품 정책이 요구합니다. 설치 후 command/definition이 바뀌면 다시 검토해야 합니다. 이 installer는 전역 trust를 변경하거나 검토를 우회하지 않습니다. <a href="https://learn.chatgpt.com/docs/hooks">Codex 공식 hooks 문서</a></p>
+<div class="table"><table><thead><tr><th>Event / tool</th><th>이 adapter의 처리</th><th>실무 조건</th></tr></thead><tbody>
+<tr><td>SessionStart</td><td>활성 profile과 공통/HW 책임 문맥 전달</td><td>Git 없는 release에서는 기존 snapshot 준비 확인</td></tr>
+<tr><td>PostToolUse: Bash, apply_patch / Edit / Write</td><td>누적 source 변경 검사, error 시 decision:block과 수정 근거 전달</td><td>exec_command는 공식 hook에서 Bash로 전달될 수 있음. apply_patch는 file_path 없이 command를 전달하므로 전체 변경 검사</td></tr>
+<tr><td>Stop</td><td>완료 전 검사, 첫 실패에 block, 반복 실패에는 명시적 FAIL 문맥</td><td>깨끗한 결과도 exit 0 + JSON 객체로 반환. Git/CI는 반복 실패를 계속 거부</td></tr>
+</tbody></table></div>
+<p>Codex command는 <code>scripts/agent_hook.py --client codex --root ... --component pablo-is</code> 또는 <code>--component gdc</code>를 사용하고, workspace의 절대 경로를 명시합니다. shell의 cwd가 바뀌어도 같은 프로젝트를 검사하며 workspace를 이동하면 재설치합니다. payload의 command 문자열을 실행하지 않습니다. 이 환경의 Codex 0.162.0에서 <code>hooks</code> 기능 제공을 확인하고 handler input/output을 로컬 검증했습니다. 새 로그인 세션의 hook trust/UI 동작은 별도 확인 항목입니다.</p>
+
+<h3 id="opencode-install">OpenCode 설치: 설치된 API에 맞는 adapter 선택</h3>
+<p>먼저 <code>opencode --version</code>과 그 버전의 plugin 문서를 확인합니다. V1과 V2는 event 등록 API가 다르므로 하나를 선택합니다. 이 작업 환경에는 OpenCode 실행 파일이 없어 버전을 추정해서 설치하지 않았습니다.</p>
+<pre><code># V1: function export + tool.execute.after API
+python3 driver_lint/scripts/install_agents.py --opencode v1 --component gdc</code></pre>
+<pre><code># V2: @opencode/plugin의 Plugin.define + ctx.tool.hook API
+python3 driver_lint/scripts/install_agents.py --opencode v2 --component gdc</code></pre>
+<p>installer는 선택한 template <a href="../integration/opencode-v1.js">opencode-v1.js</a> / <a href="../integration/opencode-v2.js">opencode-v2.js</a>를 프로젝트 <code>.opencode/plugins/driver-lint-pablo-is.js</code> / <code>driver-lint-gdc.js</code>로 복사하고 <code>AGENTS.md</code> 지침을 추가합니다. 프로젝트 local plugin은 시작 시 자동 로드됩니다. V2는 <code>@opencode/plugin</code>을 제공하는 호환 runtime을 사용해야 합니다. <a href="https://opencode.ai/docs/plugins/">V1 공식 plugin 문서</a>, <a href="https://opencode.ai/v2/docs/build/plugins">V2 공식 plugin API</a>, <a href="https://opencode.ai/v2/docs/plugins">V2 loading 문서</a></p>
+<div class="table"><table><thead><tr><th>API</th><th>Adapter 동작</th><th>확인할 조건</th></tr></thead><tbody>
+<tr><td>V1</td><td>edit / write / apply_patch / bash 완료 후 Python scan. output 문자열과 존재하는 content 배열에 진단 추가</td><td>실패한 tool attempt의 after event는 runtime에 따라 다름. 기본 지침의 완료 검사와 Git/CI로 누락을 확인</td></tr>
+<tr><td>V2</td><td>같은 tools의 execute.after에 등록. completed 결과의 content에 진단 추가, error 결과의 message에 실패 근거 추가</td><td>content 문자열/배열을 처리하고 원래 part/metadata를 보존. 다른 shape/status는 명시적 API 오류로 처리</td></tr>
+</tbody></table></div>
+<p>두 adapter는 Node <code>execFile</code>의 인자 배열로 Python을 호출합니다. shell command를 조합하거나 agent payload를 eval하지 않습니다. V1은 worktree/directory, V2는 plugin instance의 <code>ctx.location.directory</code>에 검사 root를 묶습니다. V2 문서는 이 location이 모든 session의 location을 뜻하지 않는다고 설명하므로, 여러 프로젝트를 처리하는 서버에서는 instance와 session의 workspace 연결을 실제로 확인해야 합니다. <a href="https://opencode.ai/v2/docs/build/plugins">V2 context 설명</a></p>
+<p><strong>검증 범위:</strong> Node callback fixture에서 실제 Python linter 호출과 실패 진단 전달, content/metadata 보존을 검사했습니다. 설치된 OpenCode runtime에서 plugin discovery, UI/model 피드백, 다른 plugin과의 결합은 아직 검증하지 않았습니다. 도입 시 임시 branch에서 위반을 추가해 event와 Git commit 차단을 함께 확인하세요. 이 조건에서도 공통 Git/CI gate는 OpenCode plugin과 독립적으로 적용됩니다.</p>
+<details><summary>API 변경 / 제거 / 공통 지침 관리</summary>
+<pre><code># V1을 설치했다면 먼저 그 adapter를 제거하고 V2로 전환
+python3 driver_lint/scripts/install_agents.py --opencode v1 --component gdc --remove
+python3 driver_lint/scripts/install_agents.py --opencode v2 --component gdc
+
+# Codex adapter 제거
+python3 driver_lint/scripts/install_agents.py --codex --remove</code></pre>
+<p>변경된 owned plugin/AGENTS block은 자동으로 덮어쓰지 않으며 사람이 병합해야 합니다. 다른 adapter가 남아 있으면 공통 AGENTS block을 유지합니다. 설치는 프로젝트 파일만 변경하며 기존 설정의 backup을 남깁니다.</p></details>
+</section>
+
+<section id="policy"><span class="number">09 / COMMON POLICY &amp; PROJECT HW PROFILE</span>
+<h2>공통 규칙과 HW 선택 정보를 분리합니다</h2>
+<p><strong>architecture를 유지한다는 기준은 공통 책임 경계를 유지하고 HW별 차이를 해당 구현에 두는 것입니다.</strong> 새 과제의 ischain이나 GDC를 이전 과제 버전으로 묶어 두지 않습니다. HW 요구가 달라지면 해당 family/IP 구현과 profile/build 연결을 함께 수정합니다. 공통 API 자체의 발전도 가능하며 callers, parameter layout, ABI 영향을 설명해야 합니다.</p>
+<pre><code>pablo_is/config/policy.json             IS 공통 계층·스타일·review 규칙 (schema 2)
+pablo_is/config/profiles/s947b.json     IS 현재 SoC/family/IP/HW 선택 (schema 1)
+gdc/config/policy.json                  GDC 공통 계층·스타일·review 규칙 (schema 2)
+gdc/config/profiles/s947b.json          GDC 현재 IP/register/build 선택 (schema 1)
+&lt;담당&gt;/config/profiles/&lt;project&gt;.json  해당 담당의 차기 과제 HW 선택
+config/rules.json                      공유 검사 엔진의 규칙 설명과 기본 severity
+# 각 policy의 profile: profiles/s947b.json은 해당 policy 폴더 기준</code></pre>
+<p>공통 policy에는 특정 <code>target</code>, <code>camera_root</code>, <code>scope</code>, <code>fragment_requirements</code>를 두지 않습니다. 과제마다 달라지는 이 값은 profile에 있습니다. 실행기는 공통 policy와 선택한 profile을 읽어 검사하며, 두 설정을 합친 SHA-256과 실제 version 선택을 보고서에 기록합니다. 현재 선택: <code>{{PROFILE_LABEL}}</code>.</p>
+<div class="table"><table><thead><tr><th>공통 policy</th><th>역할</th></tr></thead><tbody>
+<tr><td>profile</td><td>기본 profile JSON 경로. policy 파일의 폴더 기준으로 해석</td></tr>
+<tr><td>layer_patterns / 경계 목록</td><td>공통 core, control, family 구현, HW API, register, test의 책임·의존 분류</td></tr>
+<tr><td>common_family_include_layers</td><td>공통 계층의 explicit HW-family include를 ARCH008로 검사. 빌드가 선택하는 공통 header/API를 사용</td></tr>
+<tr><td>max_line_length / max_function_lines / max_patch_lines</td><td>현재 공통 기본값 100열 / 120줄 / 파일당 변경 400줄. 각각 review warning</td></tr>
+<tr><td>long_line_exempt_paths</td><td>명시된 SFR/setfile/network table의 STYLE003만 제외. 변경 시 REVIEW001과 다른 검사는 유지</td></tr>
+<tr><td>severity_overrides / suppressions</td><td>규칙 심각도와 rule/path/reason/owner를 갖춘 좁은 예외. 현재 예외 목록은 비어 있음</td></tr>
+<tr><td>snapshot / checkpatch</td><td>각 담당의 원본 source reference와 검사 도구 위치·옵션. source reference는 HW 버전 고정 장치가 아님</td></tr>
+</tbody></table></div>
+<h3>Family와 IP별 버전은 독립적으로 선택합니다</h3>
+<div class="table"><table><thead><tr><th>Profile 항목</th><th>설정과 검사의 의미</th></tr></thead><tbody>
+<tr><td>id / device / soc / evidence</td><td>과제 식별과 선택 근거. 마케팅 SoC 이름에서 버전을 추정하지 않고 HW 문서와 source/build 선택을 확인</td></tr>
+<tr><td>camera_root / scope / scope_include / scope_exclude</td><td>workspace 기준 source root와 검사할 module/fragment 경로. positive include / negative exclude로 담당 경로를 나누고, 파일명·확장자·exclude는 담당 policy와 함께 적용</td></tr>
+<tr><td>version_domains</td><td>Pablo IS는 family domain 1개와 필요한 IS IP domain들, GDC는 family 없이 GDC IP domain만 사용합니다. 각 domain의 <code>selected_versions</code>는 독립된 목록이며 검증된 복수 선택도 가능. 선택 버전은 source/build mapping에 나타나야 하며 label과 기대 source가 충돌하면 설정 오류. 목록에 없는 구현 수정은 ARCH007 review warning; 문서화된 compatible register는 선택에 포함</td></tr>
+<tr><td>path_pattern</td><td>camera_root 기준 상대 source 경로에서 버전을 추출하는 정규식. 정확히 한 개의 capturing group을 사용. 차기 HW의 명명 방식이 달라지면 profile의 pattern도 갱신</td></tr>
+<tr><td>include_pattern</td><td>family domain의 header include 경로에서 family를 추출. 해당 family 구현은 자기 family 또는 문서화된 include_compatibility를 사용</td></tr>
+<tr><td>implementation_pattern / register_pattern</td><td>각 IP의 API source와 register include 버전을 각각 추출. 기본은 같은 버전이며 ARCH006으로 pairing 검사. profile에 등록한 IP에만 적용</td></tr>
+<tr><td>camera_families</td><td>Pablo IS의 IP 구현이 사용할 수 있는 camera family 목록. IP 버전과 family 숫자가 같을 필요는 없음. IS에서 생략 시 선택한 family 목록 사용. GDC profile에는 등록하지 않음</td></tr>
+<tr><td>register_compatibility / include_compatibility</td><td>구현 version → <code>versions + reason + evidence</code>를 매핑. HW 재사용·조건부 layout 선택의 실제 근거 필요. 린터는 HW 호환성 자체를 증명하지 않음</td></tr>
+<tr><td>common_family_selectors</td><td>공통 compile-time family dispatch가 필요한 특정 경로의 <code>path + reason + evidence</code>. path는 camera_root 기준이며 fnmatch 사용. 전처리기 조건은 별도 검토</td></tr>
+<tr><td>fragments</td><td>파일마다 <code>path + requirements + exclusive_groups</code>. requirements는 CONFIG_*의 y/m/n, exclusive_groups는 config pattern과 허용 selected 목록. 값 누락/변경/중복 및 선택 밖 enable 검사</td></tr>
+<tr><td>build_contracts.kconfig</td><td>path/symbol과 선택적 depends_on 조건. 특정 SoC 의존과 필요한 config 선언을 검사</td></tr>
+<tr><td>build_contracts.kbuild</td><td>path/target/config/sources/exact와 선택적 versioned_source_pattern. 줄 연결 후 literal object 선택을 검사. exact=false이면 공통 object와 다른 IP의 object를 함께 둘 수 있음</td></tr>
+<tr><td>build_contracts.ddk / selectors</td><td>DDK의 module/config True branch와 기대 source 목록, board group의 name/boards 및 keyword(기본 match_any). profile이 선택한 source 밖의 versioned_source_pattern match를 검출</td></tr>
+<tr><td>build_contracts.literals</td><td>선택적 name/keyword/values mapping. selector가 있으면 select의 해당 branch, 없으면 literal list 또는 glob의 입력 목록을 검사. ischain include 경로, family filegroup, 재사용 IP source 연결 확인</td></tr>
+<tr><td>protected_sources / review_variants</td><td>해당 담당이 선택한 HW 구현·register의 필수 경로와 빌드 variant. 보호 source 또는 등록된 build/fragment 삭제는 BUILD005. profile-only에서 필수 파일 누락은 exit 2</td></tr>
+</tbody></table></div>
+<p>현재 예제에서는 <strong>Pablo v14_0_0 / GDC v1400 / YUVP v13_0</strong>를 선택합니다. 이는 동일 버전 강제 규칙이 아니라 실제 source selector의 관찰 결과입니다. GDC v1200의 v1200/v1201과 YUVP v3_0의 v3_0/v3_1 register 분기는 이 source tree의 조건부 include 근거를 가진 호환성 항목으로 기록했습니다. 차기 과제에 이 호환성을 그대로 복사할 수 있는지는 다시 확인해야 합니다.</p>
+<details><summary>Pablo IS s947b profile 전체: 검증한 예제 설정</summary><p><a class="file" href="../pablo_is/config/profiles/s947b.json">pablo_is/config/profiles/s947b.json</a> 원본입니다. 이 문서는 생성 시 활성 profile을 읽어 아래 내용을 삽입합니다. 다른 SoC의 규격을 의미하지 않습니다.</p><pre><code>{{PROFILE_JSON}}</code></pre></details>
+<details><summary>GDC s947b profile: Pablo family 없이 독립 선택</summary><p><a class="file" href="../gdc/config/profiles/s947b.json">gdc/config/profiles/s947b.json</a>의 GDC IP/register/build 선택입니다.</p><pre><code>{{GDC_PROFILE_JSON}}</code></pre></details>
+<h3>차기 SoC 또는 HW version으로 전환하는 절차</h3>
+<ol>
+<li>변경 HW의 specification, family parameter layout, 공통 API 계약, Kconfig, Makefile, Bazel selector와 최종 <code>.config</code>를 확인합니다. family/API/control/register의 version을 IP별로 확인합니다.</li>
+<li>과제별 profile을 만들고 scope, version_domains, register/include compatibility, fragment, source/object/filegroup/include 선택, 보호 경로와 빌드 variant를 갱신합니다. 새 version 자체를 error로 막는 규칙은 추가하지 않습니다.</li>
+<li>HW별 차이는 해당 family/IP 구현에 반영합니다. 공통 buffer/PM/lifecycle 코드는 공통 계약으로 호출하며 explicit version header나 register offset을 새로 결합하지 않습니다. 공통 API 변경이 필요한 경우 호출자/ABI 영향과 전환 방식을 함께 검토합니다.</li>
+<li><code>--profile-only</code>로 등록된 현재 build/HW 연결을 전부 검사하고 정상 source gate를 실행합니다. <code>--all</code>은 기존 source에 대한 규칙 영향 조사입니다. build/KUnit/실기 검증을 과제별로 수행합니다.</li>
+<li><code>policy.profile</code>을 새 profile 경로로 변경해 hooks와 기본 CLI가 같은 과제를 사용하게 합니다. source/HW 변경과 profile 변경을 같은 리뷰에서 근거와 함께 확인합니다.</li>
+</ol>
+<pre><code># 기존 설정을 새 과제의 작성 예제로 복사한 후 모든 HW 선택 항목을 검토/수정
+cp driver_lint/gdc/config/profiles/s947b.json driver_lint/gdc/config/profiles/new_project.json
+
+# 새 profile 작성 완료 후 실행 (실제 새 HW를 검증했다는 예제가 아님)
+python3 driver_lint/gdc/lint.py doctor --profile new_project
+python3 driver_lint/gdc/lint.py scan --profile new_project --profile-only --checkpatch off
+python3 driver_lint/gdc/lint.py scan --profile new_project
+python3 driver_lint/gdc/lint.py scan --profile new_project --all --checkpatch off
+
+# hooks의 기본 과제도 바꿀 때 policy.json의 profile 값 수정
+# "profile": "profiles/new_project.json"</code></pre>
+<p><code>--profile NAME</code>은 policy 폴더의 <code>profiles/NAME.json</code>을 읽습니다. JSON 경로를 지정하면 <code>--root</code> 기준으로 해석하며, 지정하지 않으면 <code>policy.profile</code>을 사용합니다. CLI의 일회성 <code>--profile</code> 지정은 hook의 기본 과제를 바꾸지 않습니다. 잘못된 schema/pattern, 근거 없는 compatibility, scope 밖의 계약 경로는 설정 오류(exit 2)입니다.</p>
+<div class="note"><strong>profile 설정 검증과 일반 source gate를 함께 실행합니다.</strong><p><code>--profile-only</code>는 변경 유무와 관계없이 등록된 파일의 ARCH006/008, BUILD003/004/005를 확인합니다. 기본 외부 엔진은 실행하지 않으며, normal scan의 새 코드 구조·스타일 검사나 실제 select/glob evaluation을 대체하지 않습니다. Pablo IS profile은 Pablo family/YUVP, GDC profile은 GDC IP/register 재사용을 별도로 모델링하며 모든 IP를 자동 추론하지 않습니다.</p></div>
+<h3>원본 reference를 유지하면서 profile을 변경합니다</h3>
+<p>같은 scope에서 profile만 바꾸면 원본 source bytes와 reference manifest는 유지됩니다. snapshot 생성 시의 policy hash와 달라지면 scan이 이를 note로 표시합니다. 선택 연결은 <code>--profile-only</code>, 새 규칙 영향은 <code>--all</code>로 확인하면 되며 profile 변경 때문에 기준선을 덮어쓸 필요는 없습니다. scope가 달라지면 reference가 호환되지 않으므로 새 과제 원본의 범위를 확인하고 수정 전에 해당 원본 reference를 준비합니다.</p>
+<h3>좁은 예외 작성 예시</h3><pre><code>{
+  "rule": "SAFE006",
+  "path": "exynos/external-modules/camera/camera/post/gdc/pablo-hw-api-gdc-v1400.c",
+  "evidence": "(u32)dma_addr",
+  "reason": "HW 주소 field의 low 32bit이며 high field는 인접 helper가 설정한다는 근거 확인",
+  "owner": "담당 reviewer 또는 팀"
+}</code></pre>
+<p>위 값은 현재 예제 경로의 설명용 설정입니다. 실제 source와 register contract를 확인한 뒤 적용합니다. 적용한 예외는 JSON의 <code>suppressed</code>에 원래 진단·reason·owner를 함께 남기고 text/HTML에도 표시합니다. owner/reason 없는 예외와 알 수 없는 rule ID는 설정 오류입니다. source의 <code>nolint</code> 주석은 해석하지 않습니다.</p>
+<h3>공통 규칙 변경 절차</h3><ol><li>오탐 또는 필요한 구조 변화의 source 근거를 확보합니다.</li><li>계층/threshold/exception 중 필요한 작은 설정을 바꾸고 catalog의 탐지 설명과 제한을 갱신합니다.</li><li>회귀 테스트와 <code>scan --all --checkpatch off</code>로 기존 source 영향을 확인합니다.</li><li>공통 규칙 변경과 과제 HW 선택 변경의 목적을 리뷰에 설명합니다. 위반을 숨기기 위해 규칙이나 reference를 바꾸지 않습니다.</li></ol>
+</section>
+
+<section id="ci"><span class="number">10 / COMMIT ENFORCEMENT &amp; REQUIRED CI</span><h2>수정 중 피드백 → Commit 차단 → Merge 조건으로 적용합니다</h2>
+<p><strong>권장 구성은 agent hook/plugin + 공통 Git pre-commit + 서버 필수 CI입니다.</strong> 수정 중에는 오류를 바로 알려 agent가 수정하게 하고, commit 직전에는 실제 제출할 내용을 검사하며, merge 직전에는 브랜치 전체 변경과 승인된 검사 정책을 확인합니다.</p>
+<div class="diagram" aria-label="Linter 적용 단계"><div class="diagram-row">
+<div class="layer"><strong>1. Agent 편집</strong><small>Claude / OpenCode / Codex<br>현재 작업 파일에 빠른 피드백</small></div><span class="arrow" aria-hidden="true">→</span>
+<div class="layer"><strong>2. Git commit</strong><small>pre-commit<br>HEAD → 실제 index</small></div><span class="arrow" aria-hidden="true">→</span>
+<div class="layer"><strong>3. 서버 CI</strong><small>driver-lint-pablo-is / driver-lint-gdc<br>리뷰 기준 → HEAD</small></div><span class="arrow" aria-hidden="true">→</span>
+<div class="layer"><strong>4. Human review</strong><small>경고·HW profile·ABI·실기 근거<br>필수 검사와 승인 후 merge</small></div>
+</div></div>
+<div class="table"><table><thead><tr><th>적용 위치</th><th>검사할 내용</th><th>실패 처리</th><th>기준과 신뢰</th></tr></thead><tbody>
+<tr><td>Agent hook/plugin</td><td>누적 작업 변경, 활성 profile</td><td>오류와 수정 방향 전달, 지원하는 Stop에서 재작업 요청</td><td>작업 중 피드백. 이미 실행된 edit를 되돌리지 않음</td></tr>
+<tr><td>Git pre-commit</td><td>stage된 담당 policy/profile/source와 전체 등록 build contract</td><td>error exit 1, 검증 불가 exit 2 → commit 거부</td><td>Git index. Claude/OpenCode/Codex/일반 터미널에 공통 적용</td></tr>
+<tr><td>서버 필수 CI</td><td>committed BASE..HEAD, 제출 profile/build 연결</td><td>job 실패 → merge 불가</td><td>보호된 base/승인된 tool revision의 엔진과 checkpatch</td></tr>
+</tbody></table></div>
+
+<h3 id="git-gate">Git pre-commit 설치: clone마다 한 번</h3>
+<pre><code># 실제 driver Git 저장소 root에서 실행
+# driver_lint의 engine/config/profile도 Git에 추적되어 있어야 함
+python3 driver_lint/scripts/install_git.py --component all
+
+# 수동으로 같은 검사 실행: 다음 commit에 포함될 내용을 검사
+python3 driver_lint/scripts/commit_gate.py
+
+# 결과 저장
+python3 driver_lint/scripts/commit_gate.py --format json \
+  --output driver_lint/reports/pre-commit.json
+
+# 이후 일반 commit마다 자동 실행
+git add &lt;수정한 파일&gt;
+git commit</code></pre>
+<p><a href="../scripts/install_git.py">installer</a>가 Git의 실제 hooks 경로를 확인하고 <a href="../integration/pre-commit">pre-commit wrapper</a>를 설치합니다. 기존 pre-commit은 <code>pre-commit.driver-lint-original</code>로 보관하고 <strong>기존 hook → driver gate</strong> 순서로 실행합니다. 기존 formatter가 stage를 바꾸면 최종 index를 검사합니다. 저장소 내부 <code>core.hooksPath</code>를 존중하며, 저장소 밖 공용 hook 경로는 자동 변경하지 않습니다. <code>--remove</code>는 변경되지 않은 wrapper만 제거하고 원래 hook을 복원합니다.</p>
+<p><code>.git/hooks</code>는 clone에 복사되지 않으므로 팀의 checkout/bootstrap 절차에 설치 명령을 넣습니다. hook 자체를 설치해 주는 bootstrap도 리뷰 대상입니다. 현재 폴더는 source release archive이며 루트 Git 저장소가 없어 실제 Git hook을 설치하지 않았습니다. installer는 Git이 없으면 exit 2로 끝나며 저장소를 새로 만들지 않습니다.</p>
+<details><summary>Android repo처럼 Git 저장소가 여러 개인 경우</summary><p>제공한 commit gate는 하나의 실제 Git root에 scope source, policy/profile, 등록 build contract가 추적되는 모델입니다. 현재 release의 상대 경로를 그대로 camera 하위 Git root에 적용할 수는 없습니다. 실제 저장소 경로에 맞춘 per-repository profile을 준비하고, 다른 Git root의 device fragment 등 교차 계약은 승인된 manifest/revision을 사용하는 통합 CI checkout에서 검사해야 합니다. 이 installer는 여러 독립 index를 자동으로 합치지 않습니다. CI runner에는 승인된 checkpatch와 dictionary도 포함해야 합니다.</p></details>
+<p><strong>로컬 pre-commit은 <code>git commit --no-verify</code>로 우회할 수 있습니다.</strong> 팀 작업 지침은 우회를 금지하고, 서버에서는 아래 필수 CI를 merge 조건으로 적용합니다. Git의 hook 실행 시점, nonzero 종료의 commit 중단과 bypass 옵션은 <a href="https://git-scm.com/docs/githooks">Git 공식 문서</a>에 정의되어 있습니다.</p>
+
+<h3>Partial staging을 정확히 검사합니다</h3>
+<div class="table"><table><thead><tr><th>Index에 stage한 코드</th><th>작업 파일</th><th>Commit gate 결과</th></tr></thead><tbody>
+<tr><td>오류 있음</td><td>오류를 수정했지만 다시 stage하지 않음</td><td>FAIL. 실제 제출할 index에 오류가 남아 있음</td></tr>
+<tr><td>정상</td><td>stage하지 않은 오류 있는 편집이 남음</td><td>PASS 가능. 정상 stage 내용만 commit됨. 작업 완료 검사는 남은 오류를 표시</td></tr>
+<tr><td>source에 오류 있음</td><td>stage하지 않은 policy에서 severity를 낮춤</td><td>FAIL. stage된 policy/profile을 읽으므로 작업 파일 설정으로 숨길 수 없음</td></tr>
+<tr><td>build 선택 오류 있음</td><td>작업 Makefile만 원래 선택으로 복구</td><td>FAIL. stage된 build contract를 검사</td></tr>
+<tr><td>git commit --only PATH</td><td>일반 index와 작업 파일이 다름</td><td>Git이 제공한 GIT_INDEX_FILE의 임시 index를 그대로 검사</td></tr>
+</tbody></table></div>
+<p><code>commit_gate.py</code>는 <code>git ls-files --stage</code>와 blob을 읽어 source, <code>policy.json</code>, 활성 project profile을 임시 view에 준비합니다. 등록된 HW/build contract는 변경이 없어도 전체 확인하고, source는 기존 위반과 새 위반을 비교합니다. 필수 파일이 stage되어 있지 않거나 merge conflict가 남으면 검증 불가로 차단합니다. 정상 scan의 <code>--staged</code>는 간단한 진단에 사용할 수 있지만 그 명령의 policy는 worktree에서 읽으므로, commit 강제 검사는 별도 gate를 사용합니다.</p>
+
+<h3 id="required-ci">서버 CI: 승인된 linter로 committed 변경 검사</h3>
+<p><a href="../integration/ci-gate.sh">integration/ci-gate.sh</a>와 <a href="../scripts/run_ci.py">scripts/run_ci.py</a>를 제공합니다. 리뷰 시스템에 <code>driver-lint-pablo-is</code>, <code>driver-lint-gdc</code> 두 job을 등록하고 각 job의 component를 서버에서 고정합니다. shell step을 사용할 때는 보호된 job 설정의 <code>DRIVER_LINT_COMPONENT=pablo-is</code> 또는 <code>gdc</code>로 선택합니다. job definition과 bootstrap, 리뷰 기준 ref, Python/Perl/PATH는 서버의 보호된 설정에서 지정합니다. 아래 step도 보호된 기준 브랜치 또는 서버 설정에서 읽습니다.</p>
+<pre><code># CI가 지정한 destination branch를 충분한 history와 함께 fetch한 상태
+# 보호된 서버 job에 아래 step을 저장하는 예
+set -eu
+DRIVER_LINT_REVIEW_BASE=origin/main
+review_base="$(git rev-parse --verify --end-of-options \
+  "${DRIVER_LINT_REVIEW_BASE}^{commit}")"
+base="$(git merge-base "$review_base" HEAD)"
+temporary="$(mktemp -d)"
+trap 'rm -rf "$temporary"' EXIT HUP INT TERM
+git show "$base:driver_lint/scripts/run_ci.py" &gt; "$temporary/run_ci.py"
+# Pablo IS job
+python3 -I "$temporary/run_ci.py" --root "$PWD" --base "$base" \
+  --component pablo-is --format json \
+  --output driver_lint/pablo_is/reports/ci-gate.json
+
+# GDC job에서는 위 준비 단계 후 이 담당 명령을 실행
+python3 -I "$temporary/run_ci.py" --root "$PWD" --base "$base" \
+  --component gdc --format json \
+  --output driver_lint/gdc/reports/ci-gate.json</code></pre>
+<p>bootstrap은 base의 <code>src/</code>, rule catalog, commit gate, bundled checkpatch를 별도 임시 폴더에 추출합니다. Python isolated mode로 이 엔진을 실행하고 제출된 HEAD의 source/config/profile은 Git blob 데이터로 검사합니다. 제출된 Python·Perl·build 코드를 실행하지 않습니다. <code>BASE..HEAD</code>를 읽으므로 이미 commit된 변경도 포함하며, CI worktree의 추가 편집으로 결과를 가리지 못합니다. job은 exit 1과 2를 실패로 처리하고 담당의 <code>reports/ci-gate.json</code>을 보관합니다. selector 생략 또는 <code>--component all</code>은 두 독립 결과를 모으는 coordinator이며, 서버에서는 위와 같이 별도 필수 status로 연결합니다.</p>
+<p>기본 CI는 각 담당 common policy를 base와 비교해 <code>profile</code> 경로 선택만 변경할 수 있게 합니다. 차기 SoC에서는 HW profile과 해당 구현/build를 정상적으로 변경할 수 있으며, Exynos2600·PABLO_V14_0_0에 고정하지 않습니다. <strong>profile 내용의 정확성, scope 축소, 호환 근거의 타당성은 HW 담당자의 필수 review로 확인합니다.</strong> data profile을 검증한다고 HW specification의 진위를 자동으로 증명하는 것은 아닙니다.</p>
+<details><summary>공통 규칙 자체를 발전시키는 maintenance 경로</summary>
+<p>common policy/engine을 변경하는 PR은 기본 gate의 common lock으로 실패합니다. 도구 담당자가 규칙 영향, 회귀 테스트, 오탐과 전체 audit를 검토한 뒤 별도 보호된 maintenance job에서 승인된 tool SHA를 지정합니다. source diff의 base와 trusted runner revision을 독립적으로 지정할 수 있습니다.</p>
+<pre><code># APPROVED_TOOL_SHA는 review 후 서버 관리자가 지정한 tool revision
+# 이 bootstrap 자체도 보호된 기준/승인된 패키지에서 준비
+python3 -I "$temporary/run_ci.py" --root "$PWD" --base "$base" \
+  --runner-ref "$APPROVED_TOOL_SHA" --format json \
+  --output driver_lint/reports/ci-gate.json</code></pre>
+<p>승인 revision의 common policy와 엔진을 사용하고 제출 source는 계속 BASE..HEAD로 검사합니다. PR label, branch 환경변수, agent 옵션으로 임의 SHA나 pass override를 선택하게 하면 안 됩니다. 일반 driver 변경과 새 과제 profile 선택은 이 maintenance 경로를 요구하지 않습니다.</p></details>
+
+<h3>필수 status와 소유자 review를 함께 설정합니다</h3>
+<ol><li>승인된 원본 driver + linter/config/profile baseline을 대상 branch에 먼저 도입합니다. bootstrap이 없는 과거 base에서는 CI를 실행할 수 없으므로 초기 인프라 도입은 human review로 완료한 뒤 필수 job을 켭니다.</li><li>리뷰 시스템에서 <code>driver-lint-pablo-is</code>와 <code>driver-lint-gdc</code>를 merge의 필수 status로 등록하고, 정상 commit에서 성공·위반 commit에서 실패하는지 확인합니다. skip/실행 누락이 merge 성공으로 인정되지 않게 설정합니다.</li><li>공유 검사 엔진은 도구 담당, 각 policy/예외/profile은 해당 driver 담당에게 review를 배정합니다. hook/plugin/AGENTS/CLAUDE 지침과 CI 설정 변경도 담당자에게 배정합니다. 공유 metadata/API 변경에 필요한 양쪽 승인은 리뷰 서버의 절차로 요구합니다.</li><li>일반 push, force push, admin bypass 등 대상 branch의 변경 경로에도 팀의 같은 검사·승인 조건을 적용합니다.</li></ol>
+<p>GitHub 예제는 <a href="../integration/CODEOWNERS.example">CODEOWNERS.example</a>입니다. 실제 팀 이름으로 바꾸고 <code>.github/CODEOWNERS</code> 등에 배치한 뒤 required code-owner review를 켭니다. CODEOWNERS 파일 자체도 보호 대상에 포함합니다. GitHub의 설정 조건은 <a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches">protected branch 공식 문서</a>와 <a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners">CODEOWNERS 공식 문서</a>를 따릅니다. 다른 리뷰 서버는 동일한 필수 job/submit 조건으로 매핑합니다. 이번 작업에서 외부 서버 설정을 변경하지는 않았습니다.</p>
+<p>GitHub CODEOWNERS에서 한 파일에 두 팀을 나열해도 어느 한 owner의 승인으로 조건이 충족됩니다. 공유 파일에 두 팀의 승인이 모두 필요하면 추가 리뷰 규칙이나 승인 절차를 구성해야 합니다. <a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners">공식 code-owner 승인 조건</a></p>
+<div class="table"><table><thead><tr><th>리뷰에서 확인할 항목</th><th>자동 검사로 얻는 정보</th><th>사람/빌드/실기로 확인</th></tr></thead><tbody>
+<tr><td>변경 위치와 책임</td><td>ARCH001–008, 파일/계층/버전 진단</td><td>현재 역할에 맞는 변경인지, API/ops 재사용 여부</td></tr>
+<tr><td>코딩 스타일</td><td>STYLE001–009, checkpatch, 선택 formatter</td><td>주변 명명·error label·함수 흐름의 일관성</td></tr>
+<tr><td>IRQ/lock/PM/DMA</td><td>SAFE001–011 패턴 신호</td><td>context, 경합, lifetime, usage count와 실패 unwind</td></tr>
+<tr><td>4K/16K/module</td><td>fragment와 Kbuild/DDK mapping, 신규 source warning</td><td>effective .config, 실제 compile/link, .ko 목록</td></tr>
+<tr><td>ABI/firmware/register</td><td>공유 header/export/table 변경 warning</td><td>layout 호환, consumer, HW field 값, firmware protocol</td></tr>
+</tbody></table></div>
+<h3>도입 순서</h3><ol><li>전체 audit를 저장하고 현재 규칙·경고 threshold를 driver 담당자와 확인합니다.</li><li>변경에 대한 error gate부터 적용하고 warning의 처리 근거를 리뷰에 적습니다.</li><li>오탐은 테스트·좁은 policy 변경으로 관리하며 공통 helper를 정리합니다.</li><li>필요한 범위에서 warning gate를 강화하고 Kleaf build/KUnit/실기 결과를 같은 리뷰에 연결합니다.</li></ol>
+<p><strong>“PASS”의 기준을 팀에서 명시하세요.</strong> 기본 commit/CI gate는 error와 검증 불가를 차단하고 warning은 review 정보로 남깁니다. 들여쓰기·공백·SPDX 등 명확한 스타일도 반드시 차단하려면, 검토한 common policy의 <code>severity_overrides</code>에서 해당 STYLE rule을 <code>error</code>로 승격합니다. REVIEW 계열 warning까지 일괄 차단하면 정상적인 public header/register 변경도 실패하므로 규칙별로 정하는 편이 운영하기 쉽습니다. 일반 scan의 <code>--fail-on warning</code>은 진단용 강화 옵션이며 설치된 Git hook의 기준을 바꾸지는 않습니다.</p>
+<pre><code>// 공통 policy에서 팀이 승인할 수 있는 스타일 승격 예
+"severity_overrides": {
+  "STYLE001": "error",
+  "STYLE002": "error",
+  "STYLE006": "error",
+  "STYLE007": "error"
+}</code></pre>
+<p>기존 release의 전체 audit가 실패한다는 이유로 모든 파일의 일괄 수정을 먼저 요구하지 않습니다. 원본 승인 baseline을 유지하고 변경에서 늘어난 위반을 차단합니다. 신규 파일은 전체 파일 규칙을 검사합니다. source snapshot 재생성이나 gate 비활성화로 실패를 지우면 안 됩니다.</p>
+<p class="muted">검사 결과 JSON과 HTML은 로컬 source path·source evidence를 포함합니다. 사내 리뷰 시스템의 기존 공개 범위에 맞춰 보고서를 저장하세요.</p></section>
+
+<section id="validation"><span class="number">11 / VERIFIED BEHAVIOR</span><h2>이번 구현의 실제 검증 결과</h2>{{VALIDATION}}
+<p>검증 기록: <a href="validation.json">validation receipt</a> · <a href="../reports/tests-summary.json">테스트 요약</a> · <a href="../reports/tests.txt">전체 테스트 로그</a> · <a href="../reports/codex-hook-verification.json">Codex handler 결과</a> · <a href="../reports/claude-hook-verification.json">Claude handler 결과</a> · <a href="../reports/current-changes.json">원본 source 변경 확인</a> · <a href="../pablo_is/reports/profile-s947b.json">Pablo IS HW/build 계약</a> · <a href="../gdc/reports/profile-s947b.json">GDC HW/build 계약</a></p>
+<h3>담당별 전체 audit에서 발견한 기존 상태</h3><p>전체 audit는 기존 release의 rule match도 포함하므로 기본 gate에서 실패할 수 있습니다. 아래 count는 수정해야 할 실제 버그 수가 아니라 <strong>현재 정책에 걸린 source 위치 수</strong>입니다. 예를 들어 기존 BUG_ON, 일부 HW API의 sensor header 공유, legacy DDK/SFR 결합 등이 포함됩니다. 기본 snapshot 검사에서는 같은 기존 위반을 분리합니다.</p>{{COMPONENT_AUDIT}}
+<details><summary>분리 이전 combined 정책으로 실행한 원본 audit 기록</summary>{{AUDIT_SUMMARY}}{{AUDIT_TABLE}}</details>
+<div class="note warn"><strong>대상 외 v13 소스에 실제 conflict marker가 있습니다.</strong><p><code>camera/ischain/is-v13_0_0/is-subdev-mcs.c</code>의 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>가 전체 audit에서 STYLE005로 검출되었습니다. S947B의 기본 v14_0_0 선택 경로 밖이지만 해당 v13 target을 빌드하거나 공통 소스를 옮길 때 확인해야 합니다. 이번 작업에서는 원본 driver를 수정하지 않았습니다.</p></div>
+<h3>검사하지 않은 범위</h3><ul><li>C preprocessor의 effective branch 및 interprocedural control/data flow, indirect function pointer 호출.</li><li>DMA buffer pin/map/unmap lifetime, cache coherency, PM get/put balance, concurrency correctness.</li><li>실제 ioctl/UAPI/GKI ABI dump 변화, firmware metadata/layout, register 값의 HW 의미.</li><li>Kleaf compile/link 및 target KUnit runtime, 실제 sensor/stream/IRQ/PM 동작.</li><li>로그인된 Claude/Codex 대화 세션의 UI·자동 재작업과 Codex hook trust. 공식 event schema와 로컬 handler 동작을 확인했습니다.</li><li>설치된 OpenCode runtime의 discovery/UI/model 전달. Node callback에서 실제 linter를 호출한 범위만 검증했습니다.</li><li>실제 사내 서버의 required CI/branch protection. 로컬 임시 Git 저장소에서 commit 차단과 trusted CI bootstrap을 검증했습니다.</li></ul>
+<p>현재 환경에는 <code>clang-format</code>이 없으므로 선택 formatter의 실제 출력 비교는 수행하지 않았습니다. <code>build/</code>, <code>tools/bazel</code>과 build용 <code>common</code> symlink도 없어 driver build/KUnit 실행 결과를 만들지 않았습니다. Python/Perl 검사는 해당 toolchain 없이 실행됩니다.</p></section>
+
+<section id="maintenance"><span class="number">12 / MAINTENANCE</span><h2>새 IP와 규칙을 추가하는 방법</h2><pre><code>driver_lint/
+  lint.py                       CLI 진입점
+  CLAUDE.md                     agent engineering 계약
+  pablo_is/                    IS 전용 CLI/config/profile/CLAUDE/reference/report/docs
+  gdc/                         GDC 전용 CLI/config/profile/CLAUDE/reference/report/docs
+  config/policy.json            legacy combined 설정 (원본 reference migration/명시적 호환)
+  config/profiles/s947b.json     legacy example. 현재 HW 선택은 각 담당 config/profiles/
+  config/rules.json              {{RULE_COUNT}}개 규칙의 설명·severity·한계
+  src/driverlint/
+    model.py                    policy와 diagnostic/result
+    source.py                   lexical C view, diff 생성
+    selection.py                Git/snapshot + before/after
+    checks.py                   프로젝트 규칙
+    engines.py                  checkpatch/clang-format 연결
+    runner.py                   기존 진단 분리와 예외 기록
+    report.py                   text/JSON/HTML/SARIF
+    hooks.py                    Claude/Codex event 처리
+    gate.py                     Git index / committed blob 기반 강제 검사
+    cli.py                      명령/exit code
+  scripts/claude_hook.py         hook launcher
+  scripts/install_claude.py      설정 병합/제거
+  scripts/agent_hook.py          Claude/Codex 공통 launcher
+  scripts/install_agents.py      Codex/OpenCode + AGENTS 설치/제거
+  scripts/install_git.py         기존 hook 연결 및 복원
+  scripts/commit_gate.py         stage/profile/build 강제 검사
+  scripts/run_ci.py              승인된 runner로 BASE..HEAD 검사
+  integration/pre-commit        도구 공통 Git hook
+  integration/ci-gate.sh         보호된 서버 CI step 예제
+  integration/opencode-v1.js     OpenCode V1 adapter
+  integration/opencode-v2.js     OpenCode V2 adapter
+  integration/codex-hooks.json   Codex events
+  integration/CODEOWNERS.example 소유자 review 설정 예제
+  scripts/build_docs.py          rule catalog·활성 profile·검증 기록으로 HTML 생성
+  integration/                  공유 가능한 Claude 설정 예제
+  tests/                        독립 임시 workspace에서 검증
+  docs/index.html               이 문서 (오프라인 단일 파일)
+  docs/guide.html.in             문서 생성 원본
+  docs/validation.json           수행 검증과 audit 요약
+  reports/                      생성 보고서 (gitignore)
+  .state/                       reference/objects (gitignore)</code></pre>
+<p>새 SoC/IP 추가는 해당 HW의 selector와 공통/family/IP API/register 경계를 조사한 뒤 <code>profile.scope</code>, <code>version_domains</code>, <code>build_contracts</code>를 갱신합니다. 경로/계층 구조도 달라지면 공통 <code>layer_patterns</code>를 근거에 맞게 조정합니다. GDC 전용 <code>raw_register_layers</code> 규칙을 다른 IP에 복사하기 전에 그 IP가 실제로 같은 HW API 경계를 지키는지 확인하세요. scope가 변경되면 기존 reference는 맞지 않으므로 원본 소스 기준을 다시 승인해야 합니다.</p>
+<pre><code># 동작 테스트
+python3 -m unittest discover -s driver_lint/tests -v
+
+# 규칙과 문서 일치 확인/재생성
+python3 driver_lint/lint.py rules
+python3 driver_lint/scripts/build_docs.py
+
+# HTML 구조/링크/JS 문법 검사 (Node.js 필요, 실제 브라우저 렌더링 검사 아님)
+python3 driver_lint/scripts/verify_docs.py</code></pre>
+<h3>추가 static analysis를 연결할 때</h3><p>effective compile flags와 target include path를 확보한 뒤 sparse, clang static analyzer 또는 semantic matching 도구를 연결하면 lock/context/type/data flow 분석을 확장할 수 있습니다. 먼저 erd9965 및 16K의 빌드 정보를 확보해야 합니다. 이 환경에서는 설정 없이 외부 분석기를 추가해 성공한 것처럼 표시하지 않았습니다.</p><p>규칙을 늘릴 때는 실제 놓친 회귀를 재현하는 test를 작성하고 수정 가능한 위치와 warning 한계를 같이 설명합니다. 변경이 없을 때는 source 전체 hash 비교만 필요하고, 바뀐 파일에서 전후 lexical 분석을 합니다. 임베디드 network array와 SFR/setfile의 긴 줄은 문서화된 경로 설정으로 기본 줄 길이 진단에서 제외했습니다.</p></section>
+
+<section id="sources"><span class="number">13 / REFERENCES</span><h2>확인한 공식 문서와 로컬 기준</h2><p>2026-10-09에 agent hooks/plugin, Git, 필수 CI의 공식 문서를 확인했습니다. 도입한 버전에서 실제 edit/완료 event, commit 차단, 서버 status를 확인하세요. Codex는 로컬 CLI의 기능을 먼저 확인하고 공식 문서를 대조했습니다. driver 계층 규칙은 이 checkout의 source 근거로 작성했습니다.</p><ul>
+<li><a href="https://code.claude.com/docs/en/hooks">Anthropic — Claude Code Hooks reference</a>: JSON input, PostToolUse feedback, Stop decision, stop_hook_active, CLAUDE_PROJECT_DIR.</li>
+<li><a href="https://code.claude.com/docs/en/settings">Anthropic — Claude Code settings</a>: project/local settings와 적용 범위.</li>
+<li><a href="https://learn.chatgpt.com/docs/hooks">OpenAI — Codex Hooks</a>: project hook 파일, event payload/output과 trust.</li>
+<li><a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">OpenAI — AGENTS.md</a>: 프로젝트 지침 적용.</li>
+<li><a href="https://opencode.ai/docs/plugins/">OpenCode — V1 Plugins</a> / <a href="https://opencode.ai/v2/docs/build/plugins">V2 Plugin API</a> / <a href="https://opencode.ai/v2/docs/build/plugins/migrate-v1">V1 migration</a>: 설치 API별로 확인.</li>
+<li><a href="https://github.com/anomalyco/opencode/blob/388406238bd5ca15564a762840a2362c3a45bd9c/packages/opencode/src/session/tools.ts">OpenCode 공식 source: V1 tool 결과 처리</a>: built-in output과 content 기반 결과의 구분. 버전별 live 동작은 별도 검증.</li>
+<li><a href="https://git-scm.com/docs/githooks">Git — githooks</a>: pre-commit과 --no-verify.</li>
+<li><a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches">GitHub — Protected branches</a> / <a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners">Code owners</a>: 필수 status/review.</li>
+<li><a href="https://docs.kernel.org/dev-tools/checkpatch.html">Linux kernel — Checkpatch</a>: patch/file mode, severity와 자체 규칙의 범위.</li>
+<li><a href="https://docs.kernel.org/process/coding-style.html">Linux kernel — Coding style</a>: tab, 함수, naming, kernel 코드 관례.</li>
+<li><a href="https://clang.llvm.org/docs/ClangFormat.html">LLVM — ClangFormat</a>: style file, replacement output와 formatter 사용법.</li>
+<li><a href="../../kernel-6.12/scripts/checkpatch.pl">로컬 Linux 6.12 checkpatch.pl</a>, <a href="../../kernel-6.12/.clang-format">로컬 .clang-format</a>: 실제 실행하는 버전과 설정.</li>
+</ul><p class="muted">이 문서는 외부 script, font, CDN을 사용하지 않습니다. 브라우저에서 로컬 index.html을 열어 검색·계층 선택·인쇄 기능을 사용할 수 있습니다.</p></section>
+<footer>Pablo IS / GDC Driver Lint 1.3 · Git/CI gates + Claude/OpenCode/Codex · Current example: SM-S947B · 2026-10-09</footer>
+
+</main>
+<script>
+const ruleCards=[...document.querySelectorAll('.rules article')];
+function filterRules(){const q=document.getElementById('rule-query').value.toLowerCase();const g=document.getElementById('rule-group').value;const l=document.getElementById('rule-level').value;let n=0;ruleCards.forEach(card=>{card.hidden=!card.textContent.toLowerCase().includes(q)||(g&&card.dataset.group!==g)||(l&&card.dataset.level!==l);if(!card.hidden)n++;});document.getElementById('rule-count').textContent=`${n} / ${ruleCards.length} rules`;}
+['rule-query','rule-group','rule-level'].forEach(id=>document.getElementById(id).addEventListener(id==='rule-query'?'input':'change',filterRules));
+document.getElementById('rule-reset').addEventListener('click',()=>{['rule-query','rule-group','rule-level'].forEach(id=>document.getElementById(id).value='');filterRules();});
+const layers={core:['Core / V4L2','공통 사용자 요청, queue/buffer 상태, stream lifecycle, runtime PM과 scheduling 정책을 담당합니다. 공통 HW API 계약으로 호출하며 register offset이나 특정 HW family의 직접 include를 결합하지 않습니다.'],control:['HW control / ischain','공통 ops와 lifecycle 제어를 유지하면서 frame/parameter를 해당 IP HW API에 전달합니다. ischain family와 HW-specific parameter layout은 과제 profile과 실제 build selector로 선택합니다. HW가 달라지면 선택된 family 구현을 수정합니다.'],api:['Hardware API','과제 HW에 맞는 register programming, bounded polling과 status 처리를 담당합니다. 각 IP의 구현/register 호환 버전은 profile에서 독립적으로 선택하며 Pablo family 숫자로 추정하지 않습니다. HW 재사용 근거가 있으면 다른 버전의 API/register 조합도 명시할 수 있습니다.'],register:['Register description','실제 IP의 register/field enum, offset, access/default table을 정의합니다. 해당 HW spec에 맞게 변경하고 bit width, reset value와 근거를 reviewer에게 전달합니다. 린터는 register 값의 HW 의미를 검증하지 않습니다.']};
+document.querySelectorAll('[data-layer]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-layer]').forEach(b=>b.classList.remove('selected'));button.classList.add('selected');const data=layers[button.dataset.layer],target=document.getElementById('layer-detail');target.replaceChildren();const strong=document.createElement('strong'),p=document.createElement('p');strong.textContent=data[0];p.textContent=data[1];target.append(strong,p);}));
+if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){document.querySelectorAll('aside nav a').forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id));}});},{rootMargin:'-10% 0px -65% 0px'});document.querySelectorAll('main section').forEach(s=>observer.observe(s));}
+</script>
+</body>
+</html>

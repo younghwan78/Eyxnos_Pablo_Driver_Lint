@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {"hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR}/driver_lint/scripts/claude_hook.py\"", "timeout": 120}]}
+    ],
+    "PostToolUse": [
+      {"matcher": "Edit|Write|MultiEdit|Bash", "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR}/driver_lint/scripts/claude_hook.py\"", "timeout": 120}]}
+    ],
+    "PostToolUseFailure": [
+      {"matcher": "Edit|Write|MultiEdit|Bash", "hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR}/driver_lint/scripts/claude_hook.py\"", "timeout": 120}]}
+    ],
+    "Stop": [
+      {"hooks": [{"type": "command", "command": "python3 \"${CLAUDE_PROJECT_DIR}/driver_lint/scripts/claude_hook.py\"", "timeout": 120}]}
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+# GitHub example. Replace example team names with actual repository teams.
+# Enable required code-owner review and protect the required CI job itself.
+/driver_lint/                 @your-org/driver-lint-maintainers
+/driver_lint/pablo_is/        @your-org/pablo-is-maintainers
+/driver_lint/gdc/             @your-org/gdc-maintainers
+/exynos/external-modules/camera/ @your-org/pablo-is-maintainers
+/exynos/external-modules/camera/camera/post/gdc/ @your-org/gdc-maintainers
+/exynos/external-modules/camera/camera/testing/kunit/post/*gdc* @your-org/gdc-maintainers
+# Shared build/board metadata needs both responsibilities represented in review.
+# GitHub accepts approval from any listed owner. Requiring both teams needs
+# additional review-server rules; listing two teams alone does not enforce it.
+/exynos/external-modules/camera/BUILD.bazel @your-org/pablo-is-maintainers @your-org/gdc-maintainers
+/exynos/external-modules/camera/camera/Kconfig @your-org/pablo-is-maintainers @your-org/gdc-maintainers
+/exynos/external-modules/camera/camera/post/Makefile @your-org/pablo-is-maintainers @your-org/gdc-maintainers
+/exynos/device/erd/erd9965/arch/arm64/configs/*.fragment @your-org/pablo-is-maintainers @your-org/gdc-maintainers
+/.claude/                    @your-org/driver-lint-maintainers
+/.codex/                     @your-org/driver-lint-maintainers
+/.opencode/                  @your-org/driver-lint-maintainers
+/CLAUDE.md                   @your-org/driver-lint-maintainers
+/AGENTS.md                   @your-org/driver-lint-maintainers
+/.github/                    @your-org/driver-lint-maintainers
+/.gitlab-ci.yml              @your-org/driver-lint-maintainers
+/Jenkinsfile                 @your-org/driver-lint-maintainers
+# Later matching entries override earlier ones. Put repository-specific CI
+# paths and CODEOWNERS ownership here when adapting to your hosting platform.

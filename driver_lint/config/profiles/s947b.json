@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "id": "s947b",
+  "device": "SM-S947B Galaxy S26+",
+  "soc": "Exynos2600 / S5E9965",
+  "scope": [
+    "exynos/external-modules/camera",
+    "exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment",
+    "exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment"
+  ],
+  "camera_root": "exynos/external-modules/camera/camera",
+  "version_domains": [
+    {
+      "name": "pablo-family",
+      "kind": "family",
+      "selected_versions": [
+        "v14_0_0"
+      ],
+      "path_pattern": "(?:include/|ischain/is-)(v\\d+_\\d+_\\d+)(?:/|$)",
+      "include_pattern": "(?:^|include/|ischain/is-)(v\\d+_\\d+_\\d+)/"
+    },
+    {
+      "name": "gdc",
+      "kind": "ip",
+      "selected_versions": [
+        "1400"
+      ],
+      "path_pattern": "post/gdc/pablo-hw-(?:api|reg)-gdc(?:-mmio)?-v(\\d+)\\.[ch]$",
+      "implementation_pattern": "post/gdc/pablo-hw-api-gdc-v(\\d+)\\.c$",
+      "register_pattern": "(?:^|/)pablo-hw-reg-gdc(?:-mmio)?-v(\\d+)\\.h$",
+      "camera_families": [
+        "v14_0_0"
+      ],
+      "register_compatibility": {
+        "1200": {
+          "versions": [
+            "1200",
+            "1201"
+          ],
+          "reason": "Existing v1200 API selects v1200/v1201 register headers with CONFIG_CAMERA_PP_GDC_V12_0_1_OBJ.",
+          "evidence": "camera/post/gdc/pablo-hw-api-gdc-v1200.c"
+        }
+      }
+    },
+    {
+      "name": "yuvp",
+      "kind": "ip",
+      "selected_versions": [
+        "13_0"
+      ],
+      "path_pattern": "hardware/(?:api/is-hw-api-yuvp|sfr/is-sfr-yuvp)-v(\\d+_\\d+)\\.[ch]$",
+      "implementation_pattern": "hardware/api/is-hw-api-yuvp-v(\\d+_\\d+)\\.c$",
+      "register_pattern": "(?:^|/)is-sfr-yuvp(?:-mmio)?-v(\\d+_\\d+)\\.h$",
+      "camera_families": [
+        "v14_0_0"
+      ],
+      "evidence": "camera/hardware/Makefile: CONFIG_PABLO_V14_0_0 selects api/is-hw-api-yuvp-v13_0.o; API includes sfr/is-sfr-yuvp-v13_0.h.",
+      "register_compatibility": {
+        "3_0": {
+          "versions": [
+            "3_0",
+            "3_1"
+          ],
+          "reason": "Existing YUVP v3_0 API selects v3_1 registers under CONFIG_PABLO_V12_1_0 and otherwise v3_0 (including MMIO). This records source-tree reuse, not a claim that every register layout is interchangeable.",
+          "evidence": "camera/hardware/api/is-hw-api-yuvp-v3_0.c: YUVP_USE_MMIO / CONFIG_PABLO_V12_1_0 include branches"
+        }
+      }
+    }
+  ],
+  "common_family_selectors": [],
+  "fragments": [
+    {
+      "path": "exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment",
+      "requirements": {
+        "CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC": "m",
+        "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ": "y",
+        "CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API": "y"
+      },
+      "exclusive_groups": [
+        {
+          "pattern": "CONFIG_CAMERA_PP_GDC_V\\d+_\\d+_\\d+_OBJ",
+          "selected": [
+            "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment",
+      "requirements": {
+        "CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC": "m",
+        "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ": "y",
+        "CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API": "y"
+      },
+      "exclusive_groups": [
+        {
+          "pattern": "CONFIG_CAMERA_PP_GDC_V\\d+_\\d+_\\d+_OBJ",
+          "selected": [
+            "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ"
+          ]
+        }
+      ]
+    }
+  ],
+  "build_contracts": {
+    "kconfig": [
+      {
+        "path": "exynos/external-modules/camera/camera/Kconfig",
+        "symbol": "PABLO_V14_0_0",
+        "depends_on": "SOC_S5E9965"
+      },
+      {
+        "path": "exynos/external-modules/camera/camera/Kconfig",
+        "symbol": "CAMERA_PP_GDC_V14_0_0_OBJ"
+      }
+    ],
+    "kbuild": [
+      {
+        "path": "exynos/external-modules/camera/camera/post/gdc/Makefile",
+        "target": "gdc",
+        "config": "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ",
+        "sources": [
+          "pablo-hw-api-gdc-v1400.o"
+        ],
+        "exact": true
+      },
+      {
+        "path": "exynos/external-modules/camera/camera/hardware/Makefile",
+        "target": "pablo-hws",
+        "config": "CONFIG_PABLO_V14_0_0",
+        "sources": [
+          "api/is-hw-api-yuvp-v13_0.o"
+        ],
+        "exact": false,
+        "versioned_source_pattern": "api/is-hw-api-yuvp-v\\d+_\\d+\\.o$"
+      }
+    ],
+    "ddk": [
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "module": "camera.pablo-gdc",
+        "config": "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ",
+        "sources": [
+          "camera/post/gdc/pablo-hw-api-gdc-v1400.c",
+          "camera/post/gdc/pablo-hw-reg-gdc-v1400.h"
+        ],
+        "versioned_source_pattern": "camera/post/gdc/pablo-hw-(?:api|reg)-gdc-v\\d+\\.[ch]$"
+      },
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "module": "camera.pablo-core",
+        "config": "CONFIG_PABLO_V14_0_0",
+        "sources": [
+          "camera.pablo-core.ischain.14.0.0.sources"
+        ],
+        "versioned_source_pattern": "camera\\.pablo-core\\.ischain\\.\\d+\\.\\d+\\.\\d+\\.sources$"
+      },
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "module": "camera.pablo-hws",
+        "config": "CONFIG_PABLO_V14_0_0",
+        "sources": [
+          "camera.pablo-hws.ischain.14.0.0.sources"
+        ],
+        "versioned_source_pattern": "camera\\.pablo-hws\\.ischain\\.\\d+\\.\\d+\\.\\d+\\.sources$"
+      }
+    ],
+    "selectors": [
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "name": "PABLO_V14_0_0",
+        "boards": [
+          "ERD9965",
+          "ERD9965_16K"
+        ]
+      }
+    ],
+    "literals": [
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "name": "camera.ischain.headers",
+        "keyword": "includes",
+        "selector": "PABLO_V14_0_0",
+        "values": [
+          "camera/ischain/is-v14_0_0",
+          "camera/include/v14_0_0"
+        ],
+        "versioned_value_pattern": "camera/(?:ischain/is-|include/)v\\d+_\\d+_\\d+$"
+      },
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "name": "camera.pablo-core.ischain.14.0.0.sources",
+        "keyword": "srcs",
+        "values": [
+          "camera/ischain/is-v14_0_0/*.c"
+        ],
+        "versioned_value_pattern": "camera/ischain/is-v\\d+_\\d+_\\d+/\\*\\.c$"
+      },
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "name": "camera.pablo-hws.ischain.14.0.0.sources",
+        "keyword": "srcs",
+        "values": [
+          "camera/hardware/api/is-hw-api-yuvp-v13_0.c"
+        ],
+        "versioned_value_pattern": "camera/hardware/api/is-hw-api-yuvp-v\\d+_\\d+\\.c$"
+      }
+    ]
+  },
+  "protected_sources": [
+    "exynos/external-modules/camera/camera/post/gdc/pablo-hw-api-gdc-v1400.c",
+    "exynos/external-modules/camera/camera/post/gdc/pablo-hw-reg-gdc-v1400.h",
+    "exynos/external-modules/camera/camera/hardware/api/is-hw-api-yuvp-v13_0.c",
+    "exynos/external-modules/camera/camera/hardware/sfr/is-sfr-yuvp-v13_0.h"
+  ],
+  "review_variants": [
+    "ERD9965 (4K)",
+    "ERD9965_16K"
+  ],
+  "evidence": [
+    "camera/Kconfig: PABLO_V14_0_0 depends on SOC_S5E9965",
+    "camera/BUILD.bazel: PABLO_V14_0_0 board selector; camera.pablo-gdc conditional_srcs",
+    "camera/post/gdc/Makefile and both erd9965 fragments"
+  ]
+}

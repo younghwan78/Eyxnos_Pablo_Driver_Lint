@@ -1,0 +1,8 @@
+{
+  "description": "Camera/GDC edit feedback; commits are enforced by the Git hook and merges by required CI.",
+  "hooks": {
+    "SessionStart": [{"hooks": [{"type": "command", "command": "@DRIVER_LINT_CODEX_COMMAND@", "timeout": 120}]}],
+    "PostToolUse": [{"matcher": "Bash|apply_patch|Edit|Write", "hooks": [{"type": "command", "command": "@DRIVER_LINT_CODEX_COMMAND@", "timeout": 120}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "@DRIVER_LINT_CODEX_COMMAND@", "timeout": 120}]}]
+  }
+}

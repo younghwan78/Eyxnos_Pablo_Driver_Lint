@@ -1,0 +1,220 @@
+{
+  "verified_utc": "2026-10-09T13:57:19.496041+00:00",
+  "checks": [
+    {
+      "name": "자동 동작 및 담당 분리 테스트",
+      "result": "PASS: 115개 / failures 0 / errors 0 / skipped 0",
+      "details": "기존 97개 검증 + 18개 owner isolation. source/KUnit scope, shared fragment/Bazel 계약, GDC IP와 Pablo family 독립, 다른 담당의 깨진 profile 미로딩, 선택 Git gate, Claude/Codex/OpenCode 분리 설치/제거, GDC 단독 trusted CI, original object 기반 reference 파생. 최종 hook의 담당 CLI/contract 안내 수정 후 관련 29개 재검증 PASS."
+    },
+    {
+      "name": "Git commit 강제 검사",
+      "result": "PASS: 임시 실제 Git 저장소에서 위반 commit 차단 → 정상 commit 허용",
+      "details": "stage 오류/작업 파일 복구, 정상 stage/오류 작업 파일, git commit --only의 임시 index, unstaged severity 변경과 build 복구가 검사 내용을 가리지 못함. 기존 pre-commit 연결 및 원본 복원, repo core.hooksPath 적용. 현재 release root에는 Git이 없어 hook 미설치."
+    },
+    {
+      "name": "서버용 trusted CI bootstrap",
+      "result": "PASS: committed BASE..HEAD + base engine/catalog/checkpatch",
+      "details": "제출 branch의 commit_gate.py/run_ci.py/checks.py를 exit 0으로 교체해도 base runner가 SAFE001을 검출. common policy 변경은 차단, 의도한 신규 HW profile 선택은 허용, 승인된 runner-ref의 maintenance 경로 검증. CI shell step도 실패 exit 전파 확인. 실제 외부 서버의 required status/branch protection은 미설정."
+    },
+    {
+      "name": "과제 profile의 HW/build 연결",
+      "result": "PASS: Pablo IS 7개 / GDC 8개 등록 파일, 선택 오류 0",
+      "details": "각 담당 scan --profile-only --checkpatch off. IS family/YUVP와 GDC IP를 독립 검증. GDC는 post/Makefile의 module 경로도 확인. 실제 select/glob/effective .config는 build로 확인."
+    },
+    {
+      "name": "실제 CLI/checkpatch/hook 통합 예제",
+      "result": "PASS: clean 0 → 위반 1, Stop block → retry 메시지",
+      "details": "scripts/demo.py의 독립 임시 fixture. 실제 bundled checkpatch와 hook stdin/JSON을 실행; 원본 driver 수정 없음."
+    },
+    {
+      "name": "실제 release 환경 준비",
+      "result": "PASS: Python 3.12.3 / Perl / snapshot",
+      "details": "scope 1813개, 37개 규칙. Git 없는 root에서 reference ready 확인."
+    },
+    {
+      "name": "기본 현재 변경 검사",
+      "result": "PASS: Pablo IS / GDC 모두 exit 0, source 변경 0개",
+      "details": "담당별 source reference에서 before/after 비교. 원본 1,813개 source는 unchanged; 1,756 + 62 - shared metadata 5 = 1,813. 원본 snapshot hash/생성 시각은 유지."
+    },
+    {
+      "name": "프로젝트 Codex 연동",
+      "result": "담당별 hook 설치 + AGENTS 지침 migration",
+      "details": "Codex 0.162.0. --component pablo-is / gdc command를 각각 설치. 선택 설치/제거와 한쪽 Stop 오류의 상대 검사 격리 확인. 바뀐 정의의 /hooks trust/live UI는 사용자 확인 항목."
+    },
+    {
+      "name": "OpenCode V1 / V2 adapter",
+      "result": "Node callback PASS / live runtime 미검증",
+      "details": "V1 tool.execute.after와 V2 Plugin.define/ctx.tool.hook templates 및 installer. Python 실제 scan 호출, 실패 진단 전달, 원본 content/metadata/error 보존 확인. V2 SDK 등록만 stub. OpenCode 실행 파일은 미설치; runtime plugin discovery/UI/model 전달은 별도 확인."
+    },
+    {
+      "name": "프로젝트 Claude 연동",
+      "result": "담당별 hook/rule 설치 + 로컬 handler 검증",
+      "details": "Pablo IS / GDC handler와 .claude/rules/pablo-is-lint.md, gdc-lint.md. 기존 unrelated settings/local settings 유지. Live UI는 미검증."
+    },
+    {
+      "name": "HTML 문서 검증",
+      "result": "PASS: 구조·로컬 링크·anchor·JS 문법·37 rule cards",
+      "details": "공통 상세 HTML + Pablo IS/GDC 전용 HTML의 구조/링크/anchor/JS 문법. 실제 브라우저 렌더링은 미검증."
+    },
+    {
+      "name": "선택 clang-format 비교",
+      "result": "미실행: formatter 미설치",
+      "details": "요청했는데 tool이 없으면 exit 2가 되는 동작은 test로 확인."
+    },
+    {
+      "name": "Driver build / KUnit / 실기",
+      "result": "미실행",
+      "details": "build/, tools/bazel, common 미존재. lint test의 통과를 driver compile/IRQ/PM/DMA 검증으로 해석하지 않음."
+    }
+  ],
+  "audit": {
+    "files": 1813,
+    "counts": {
+      "warning": 11668,
+      "error": 72
+    },
+    "elapsed_seconds": 8.505,
+    "rule_counts": {
+      "ARCH002": 1,
+      "ARCH004": 5,
+      "SAFE001": 63,
+      "SAFE003": 2,
+      "SAFE005": 10,
+      "SAFE006": 82,
+      "SAFE008": 1,
+      "SAFE009": 1,
+      "SAFE011": 4,
+      "STYLE001": 28,
+      "STYLE002": 75,
+      "STYLE003": 10551,
+      "STYLE005": 3,
+      "STYLE006": 369,
+      "STYLE007": 23,
+      "STYLE008": 522
+    },
+    "policy_mode": "legacy combined (historical before ownership split)"
+  },
+  "demo": {
+    "clean_cli_exit": 0,
+    "injected_cli_exit": 1,
+    "rule": "ARCH003",
+    "checkpatch": "bundled checkpatch completed",
+    "first_stop": "block",
+    "repeated_stop": "explicit FAIL message; no repeat block",
+    "real_driver_source_modified": false
+  },
+  "profile": "s947b",
+  "tool_version": "1.3.0",
+  "clients": {
+    "claude_code": "2.1.295 (settings/local handlers tested; live UI untested)",
+    "codex": "0.162.0 (settings/local handlers tested; /hooks trust pending)",
+    "opencode": "not installed (V1/V2 Node callback fixtures only)"
+  },
+  "git_enforcement": {
+    "workspace_git": false,
+    "workspace_hook_installed": false,
+    "temporary_git_repositories_tested": true,
+    "server_ci_configured": false,
+    "stage_and_committed_git_blobs": true,
+    "driver_source_modified": false
+  },
+  "components": {
+    "pablo-is": {
+      "policy_sha256": "d4546ec9a52b257b6da53938e9c412b22f9cef78e6414690dd2c0dd7d526af0d",
+      "scope_files": 1756,
+      "reference_files": 1756,
+      "profile_contract_files": 7,
+      "current_changes_exit": 0,
+      "current_changes_files": 0,
+      "profile_id": "s947b",
+      "version_domains": [
+        "pablo-family",
+        "yuvp"
+      ],
+      "audit": {
+        "files": 1756,
+        "counts": {
+          "warning": 11117,
+          "error": 71
+        },
+        "elapsed_seconds": 8.833,
+        "rule_counts": {
+          "ARCH002": 1,
+          "ARCH004": 5,
+          "SAFE001": 62,
+          "SAFE003": 2,
+          "SAFE005": 10,
+          "SAFE006": 82,
+          "SAFE008": 1,
+          "SAFE009": 1,
+          "SAFE011": 4,
+          "STYLE001": 27,
+          "STYLE002": 75,
+          "STYLE003": 10053,
+          "STYLE005": 3,
+          "STYLE006": 357,
+          "STYLE007": 23,
+          "STYLE008": 482
+        }
+      }
+    },
+    "gdc": {
+      "policy_sha256": "8d57b41d2676ef83d50a17564155d65e30b88673503897af40fd41b3424c766a",
+      "scope_files": 62,
+      "reference_files": 62,
+      "profile_contract_files": 8,
+      "current_changes_exit": 0,
+      "current_changes_files": 0,
+      "profile_id": "s947b",
+      "version_domains": [
+        "gdc"
+      ],
+      "audit": {
+        "files": 62,
+        "counts": {
+          "warning": 558,
+          "error": 1
+        },
+        "elapsed_seconds": 0.491,
+        "rule_counts": {
+          "SAFE001": 1,
+          "STYLE001": 1,
+          "STYLE003": 505,
+          "STYLE006": 12,
+          "STYLE008": 40
+        }
+      }
+    }
+  },
+  "ownership": {
+    "source_union_files": 1813,
+    "shared_metadata": [
+      "exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment",
+      "exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment",
+      "exynos/external-modules/camera/BUILD.bazel",
+      "exynos/external-modules/camera/camera/Kconfig",
+      "exynos/external-modules/camera/camera/post/Makefile"
+    ],
+    "original_reference_sha256": "23be9f9f3f9df05599a1871ccd319c0982794e024e27cff7373aef62875bbe27",
+    "original_created_utc": "2026-10-09T04:21:39.020977+00:00",
+    "original_reference_changed": false
+  },
+  "legacy_combined_policy_sha256": "36a79f8fb0c16fde824f6e9d74a1e09911b58b977671c94892e940ebc757d96b",
+  "owner_handler_verification": {
+    "clients": [
+      "codex",
+      "claude"
+    ],
+    "components": [
+      "pablo-is",
+      "gdc"
+    ],
+    "events": [
+      "SessionStart",
+      "PostToolUse",
+      "Stop"
+    ],
+    "result": "PASS (local subprocess/JSON; live UI untested)",
+    "targeted_regression_tests": 29
+  }
+}

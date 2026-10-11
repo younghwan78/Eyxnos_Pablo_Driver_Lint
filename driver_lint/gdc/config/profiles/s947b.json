@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "id": "s947b",
+  "device": "SM-S947B Galaxy S26+",
+  "soc": "Exynos2600 / S5E9965",
+  "scope": [
+    "exynos/external-modules/camera/camera/post/gdc",
+    "exynos/external-modules/camera/camera/testing/kunit/post",
+    "exynos/external-modules/camera/BUILD.bazel",
+    "exynos/external-modules/camera/camera/Kconfig",
+    "exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment",
+    "exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment",
+    "exynos/external-modules/camera/camera/post/Makefile"
+  ],
+  "camera_root": "exynos/external-modules/camera/camera",
+  "version_domains": [
+    {
+      "name": "gdc",
+      "kind": "ip",
+      "selected_versions": [
+        "1400"
+      ],
+      "path_pattern": "post/gdc/pablo-hw-(?:api|reg)-gdc(?:-mmio)?-v(\\d+)\\.[ch]$",
+      "implementation_pattern": "post/gdc/pablo-hw-api-gdc-v(\\d+)\\.c$",
+      "register_pattern": "(?:^|/)pablo-hw-reg-gdc(?:-mmio)?-v(\\d+)\\.h$",
+      "register_compatibility": {
+        "1200": {
+          "versions": [
+            "1200",
+            "1201"
+          ],
+          "reason": "Existing v1200 API selects v1200/v1201 register headers with CONFIG_CAMERA_PP_GDC_V12_0_1_OBJ.",
+          "evidence": "camera/post/gdc/pablo-hw-api-gdc-v1200.c"
+        }
+      }
+    }
+  ],
+  "common_family_selectors": [],
+  "fragments": [
+    {
+      "path": "exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment",
+      "requirements": {
+        "CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC": "m",
+        "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ": "y",
+        "CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API": "y"
+      },
+      "exclusive_groups": [
+        {
+          "pattern": "CONFIG_CAMERA_PP_GDC_V\\d+_\\d+_\\d+_OBJ",
+          "selected": [
+            "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment",
+      "requirements": {
+        "CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC": "m",
+        "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ": "y",
+        "CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API": "y"
+      },
+      "exclusive_groups": [
+        {
+          "pattern": "CONFIG_CAMERA_PP_GDC_V\\d+_\\d+_\\d+_OBJ",
+          "selected": [
+            "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ"
+          ]
+        }
+      ]
+    }
+  ],
+  "build_contracts": {
+    "kconfig": [
+      {
+        "path": "exynos/external-modules/camera/camera/Kconfig",
+        "symbol": "CAMERA_PP_GDC_V14_0_0_OBJ"
+      }
+    ],
+    "kbuild": [
+      {
+        "path": "exynos/external-modules/camera/camera/post/gdc/Makefile",
+        "target": "gdc",
+        "config": "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ",
+        "sources": [
+          "pablo-hw-api-gdc-v1400.o"
+        ],
+        "exact": true
+      },
+      {
+        "path": "exynos/external-modules/camera/camera/post/Makefile",
+        "target": "obj",
+        "config": "CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC",
+        "sources": [
+          "gdc/"
+        ],
+        "exact": true
+      }
+    ],
+    "ddk": [
+      {
+        "path": "exynos/external-modules/camera/BUILD.bazel",
+        "module": "camera.pablo-gdc",
+        "config": "CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ",
+        "sources": [
+          "camera/post/gdc/pablo-hw-api-gdc-v1400.c",
+          "camera/post/gdc/pablo-hw-reg-gdc-v1400.h"
+        ],
+        "versioned_source_pattern": "camera/post/gdc/pablo-hw-(?:api|reg)-gdc-v\\d+\\.[ch]$"
+      }
+    ],
+    "selectors": [],
+    "literals": []
+  },
+  "protected_sources": [
+    "exynos/external-modules/camera/camera/post/gdc/pablo-hw-api-gdc-v1400.c",
+    "exynos/external-modules/camera/camera/post/gdc/pablo-hw-reg-gdc-v1400.h"
+  ],
+  "review_variants": [
+    "ERD9965 (4K)",
+    "ERD9965_16K"
+  ],
+  "evidence": [
+    "camera/post/gdc/Makefile: GDC IP object selection independent of Pablo family",
+    "camera/BUILD.bazel: camera.pablo-gdc CONFIG_CAMERA_PP_GDC_* branches",
+    "erd9965 4K/16K fragments: GDC module, IP version and VOTF adapter"
+  ],
+  "component": "gdc",
+  "scope_include": [
+    "exynos/external-modules/camera/camera/post/gdc/*",
+    "exynos/external-modules/camera/camera/testing/kunit/post/*gdc*",
+    "exynos/external-modules/camera/BUILD.bazel",
+    "exynos/external-modules/camera/camera/Kconfig",
+    "exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment",
+    "exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment",
+    "exynos/external-modules/camera/camera/post/Makefile"
+  ]
+}

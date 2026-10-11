@@ -1,0 +1,21 @@
+<!-- driver-lint:start -->
+## Camera/GDC engineering and commit gate
+
+Read `driver_lint/CLAUDE.md` and the active project profile in
+`driver_lint/config/policy.json` before editing scoped drivers. Common
+lifecycle/buffer/PM/API responsibilities and HW-specific implementations are
+separate. Family and IP versions are independent; intended HW migrations update
+the project profile and HW/build code with evidence.
+
+Use the installed agent hook/plugin for edit feedback. Before finishing, run
+`python3 driver_lint/lint.py scan`. In Git projects the installed pre-commit hook
+runs `python3 driver_lint/scripts/commit_gate.py`: it checks staged configuration,
+build contracts and source blobs, including partial staging. Errors or inability
+to verify reject the commit. Let the hook run on every commit; repair failures
+without disabling the hook or weakening common policy. CI checks committed
+changes against the review base and must be required for merge.
+
+Include warnings, selected profile, build/KUnit/HW results and pending validation
+in the review. A passing lint does not establish correct HW behavior. This release
+root currently uses a source snapshot until it is hosted in an actual Git project.
+<!-- driver-lint:end -->

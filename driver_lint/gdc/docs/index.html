@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GDC 독립 linter 운영 가이드</title>
+<style>body{font:15px/1.8 system-ui,sans-serif;margin:0;background:#f3f6fa;color:#24364b}main{max-width:1100px;margin:auto;padding:35px}h1{font-size:34px}h2{font-size:24px}h3{font-size:18px}nav{display:flex;gap:18px;flex-wrap:wrap}a{color:#165ea3}section{padding:26px 0;border-bottom:1px solid #d2deea}pre{background:#152d45;color:#eef5ff;padding:20px;overflow:auto;border-radius:8px}code{font:13px/1.7 monospace;overflow-wrap:anywhere}table{border-collapse:collapse;background:white;width:100%}th,td{border-bottom:1px solid #d2deea;text-align:left;vertical-align:top;padding:12px;overflow-wrap:anywhere}article{padding:16px 20px;margin:12px 0;background:white;border:1px solid #d2deea;border-radius:8px}dt{font-weight:650}dd{margin:4px 0 12px}small{color:#57718a}.note{padding:18px;background:#e6eff9;border-radius:8px}@media(max-width:650px){main{padding:18px}h1{font-size:27px}}</style></head><body><main>
+<header><small>OWNER: gdc · SHARED ENGINE 1.3</small><h1>GDC 독립 linter</h1><p>post/gdc의 core/HW API/register/HDR10+/VOTF와 GDC KUnit. IS production source 및 Pablo family 선택은 제외합니다.</p>
+<nav><a href="#usage">실행</a><a href="#ownership">책임 경계</a><a href="#profile">HW profile</a><a href="#hooks">Hooks / Commit</a><a href="#ci">CI / Review</a><a href="#rules">규칙</a><a href="#verified">검증과 한계</a><a href="../../docs/index.html">공통 상세 문서</a></nav></header>
+<section id="usage"><h2>담당 드라이버만 검사합니다</h2><pre><code>python3 driver_lint/gdc/lint.py doctor
+python3 driver_lint/gdc/lint.py scan
+python3 driver_lint/gdc/lint.py scan --profile-only --checkpatch off
+python3 driver_lint/gdc/lint.py scan --format html \
+  --output driver_lint/gdc/reports/change.html</code></pre>
+<p><a href="../lint.py">CLI</a> · <a href="../commit_gate.py">Commit gate</a> · <a href="../config/policy.json">담당 policy</a> · <a href="../CLAUDE.md">개발 계약</a></p>
+<p>공유 Python 검사 엔진은 <code>driver_lint/src/driverlint</code>입니다. 이 패키지의 policy/profile/reference를 읽고 다른 담당의 policy/profile은 읽지 않습니다. 기본 gate는 error / 검증 불가를 차단하고 warning은 리뷰 정보로 표시합니다. 명확한 스타일을 강제하려면 이 패키지 policy의 severity_overrides로 해당 rule을 error로 승격합니다. exit 0 통과 / 1 위반 / 2 검증 불가.</p></section>
+<section id="ownership"><h2>소스와 공유 metadata의 책임</h2><p>post/gdc의 core/HW API/register/HDR10+/VOTF와 GDC KUnit. IS production source 및 Pablo family 선택은 제외합니다.</p><p>공유 파일은 camera Kconfig, BUILD.bazel, post/Makefile, board fragment입니다. 이 linter는 profile의 해당 담당 계약만 검증합니다. 다른 담당의 HW 버전 불일치를 자신의 오류로 판정하지 않습니다. 공유 파일 문법/스타일과 cross-driver helper/API 변경은 양쪽 책임에 영향을 줄 수 있습니다.</p>
+<table><thead><tr><th>분리 항목</th><th>이 담당의 경로 / 기준</th></tr></thead><tbody>
+<tr><td>Architecture/style/예외</td><td>gdc/config/policy.json · severity_overrides / suppressions 독립</td></tr>
+<tr><td>HW profile</td><td>gdc/config/profiles/ · policy.profile로 선택</td></tr>
+<tr><td>Reference</td><td>gdc/.state/reference.json · 승인된 원본 object에서 파생</td></tr>
+<tr><td>Reports</td><td>gdc/reports/</td></tr>
+<tr><td>검증 기록의 Source 개수</td><td>62 files (공유 metadata 포함; 현재 checkout 검사 결과가 아님)</td></tr>
+</tbody></table><p>새 release에서 code 수정 전에 담당 <code>snapshot create</code>를 실행합니다. 현재 파생 manifest는 원본 shared <code>driver_lint/.state/objects</code>를 읽으므로 이 store를 유지합니다. 기준선 재생성으로 실패를 숨기면 안 됩니다.</p></section>
+<section id="profile"><h2>차기 SoC/HW 변경</h2><p>gdc / profile s947b: SM-S947B Galaxy S26+ / Exynos2600 / S5E9965; gdc=1400</p>
+<p>GDC IP/API/register version을 독립 선택합니다. Pablo family domain과 camera_families 선택은 이 profile에 넣지 않습니다. IS의 family 변경만으로 GDC HW version을 변경하지 않습니다.</p>
+<ol><li>이 패키지의 s947b.json을 새 과제 profile로 복사하고 HW spec/build 근거를 확인합니다.</li><li>HW 구현/register, scope, compatibility, build contract와 보호 source를 수정합니다. 재사용은 reason/evidence를 기록합니다.</li><li>이 패키지의 profile-only와 normal scan을 실행하고 build/KUnit/HW 근거를 확인합니다.</li><li>이 policy의 profile 경로를 새 과제로 바꿔 hooks/CLI/CI가 같은 과제를 사용하게 합니다.</li></ol>
+<table><thead><tr><th>계약</th><th>개수</th><th>파일</th></tr></thead><tbody><tr><td>kconfig</td><td>1</td><td>exynos/external-modules/camera/camera/Kconfig</td></tr><tr><td>kbuild</td><td>2</td><td>exynos/external-modules/camera/camera/post/gdc/Makefile<br>exynos/external-modules/camera/camera/post/Makefile</td></tr><tr><td>ddk</td><td>1</td><td>exynos/external-modules/camera/BUILD.bazel</td></tr><tr><td>selectors</td><td>0</td><td></td></tr><tr><td>literals</td><td>0</td><td></td></tr></tbody></table>
+<details><summary>현재 HW profile 전체 보기</summary><pre><code>{
+  &quot;schema_version&quot;: 1,
+  &quot;id&quot;: &quot;s947b&quot;,
+  &quot;device&quot;: &quot;SM-S947B Galaxy S26+&quot;,
+  &quot;soc&quot;: &quot;Exynos2600 / S5E9965&quot;,
+  &quot;scope&quot;: [
+    &quot;exynos/external-modules/camera/camera/post/gdc&quot;,
+    &quot;exynos/external-modules/camera/camera/testing/kunit/post&quot;,
+    &quot;exynos/external-modules/camera/BUILD.bazel&quot;,
+    &quot;exynos/external-modules/camera/camera/Kconfig&quot;,
+    &quot;exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment&quot;,
+    &quot;exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment&quot;,
+    &quot;exynos/external-modules/camera/camera/post/Makefile&quot;
+  ],
+  &quot;camera_root&quot;: &quot;exynos/external-modules/camera/camera&quot;,
+  &quot;version_domains&quot;: [
+    {
+      &quot;name&quot;: &quot;gdc&quot;,
+      &quot;kind&quot;: &quot;ip&quot;,
+      &quot;selected_versions&quot;: [
+        &quot;1400&quot;
+      ],
+      &quot;path_pattern&quot;: &quot;post/gdc/pablo-hw-(?:api|reg)-gdc(?:-mmio)?-v(\\d+)\\.[ch]$&quot;,
+      &quot;implementation_pattern&quot;: &quot;post/gdc/pablo-hw-api-gdc-v(\\d+)\\.c$&quot;,
+      &quot;register_pattern&quot;: &quot;(?:^|/)pablo-hw-reg-gdc(?:-mmio)?-v(\\d+)\\.h$&quot;,
+      &quot;register_compatibility&quot;: {
+        &quot;1200&quot;: {
+          &quot;versions&quot;: [
+            &quot;1200&quot;,
+            &quot;1201&quot;
+          ],
+          &quot;reason&quot;: &quot;Existing v1200 API selects v1200/v1201 register headers with CONFIG_CAMERA_PP_GDC_V12_0_1_OBJ.&quot;,
+          &quot;evidence&quot;: &quot;camera/post/gdc/pablo-hw-api-gdc-v1200.c&quot;
+        }
+      }
+    }
+  ],
+  &quot;common_family_selectors&quot;: [],
+  &quot;fragments&quot;: [
+    {
+      &quot;path&quot;: &quot;exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment&quot;,
+      &quot;requirements&quot;: {
+        &quot;CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC&quot;: &quot;m&quot;,
+        &quot;CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ&quot;: &quot;y&quot;,
+        &quot;CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API&quot;: &quot;y&quot;
+      },
+      &quot;exclusive_groups&quot;: [
+        {
+          &quot;pattern&quot;: &quot;CONFIG_CAMERA_PP_GDC_V\\d+_\\d+_\\d+_OBJ&quot;,
+          &quot;selected&quot;: [
+            &quot;CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ&quot;
+          ]
+        }
+      ]
+    },
+    {
+      &quot;path&quot;: &quot;exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment&quot;,
+      &quot;requirements&quot;: {
+        &quot;CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC&quot;: &quot;m&quot;,
+        &quot;CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ&quot;: &quot;y&quot;,
+        &quot;CONFIG_CAMERA_PP_GDC_VOTF_USE_MFC_API&quot;: &quot;y&quot;
+      },
+      &quot;exclusive_groups&quot;: [
+        {
+          &quot;pattern&quot;: &quot;CONFIG_CAMERA_PP_GDC_V\\d+_\\d+_\\d+_OBJ&quot;,
+          &quot;selected&quot;: [
+            &quot;CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ&quot;
+          ]
+        }
+      ]
+    }
+  ],
+  &quot;build_contracts&quot;: {
+    &quot;kconfig&quot;: [
+      {
+        &quot;path&quot;: &quot;exynos/external-modules/camera/camera/Kconfig&quot;,
+        &quot;symbol&quot;: &quot;CAMERA_PP_GDC_V14_0_0_OBJ&quot;
+      }
+    ],
+    &quot;kbuild&quot;: [
+      {
+        &quot;path&quot;: &quot;exynos/external-modules/camera/camera/post/gdc/Makefile&quot;,
+        &quot;target&quot;: &quot;gdc&quot;,
+        &quot;config&quot;: &quot;CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ&quot;,
+        &quot;sources&quot;: [
+          &quot;pablo-hw-api-gdc-v1400.o&quot;
+        ],
+        &quot;exact&quot;: true
+      },
+      {
+        &quot;path&quot;: &quot;exynos/external-modules/camera/camera/post/Makefile&quot;,
+        &quot;target&quot;: &quot;obj&quot;,
+        &quot;config&quot;: &quot;CONFIG_VIDEO_EXYNOS_CAMERA_POSTPROCESS_GDC&quot;,
+        &quot;sources&quot;: [
+          &quot;gdc/&quot;
+        ],
+        &quot;exact&quot;: true
+      }
+    ],
+    &quot;ddk&quot;: [
+      {
+        &quot;path&quot;: &quot;exynos/external-modules/camera/BUILD.bazel&quot;,
+        &quot;module&quot;: &quot;camera.pablo-gdc&quot;,
+        &quot;config&quot;: &quot;CONFIG_CAMERA_PP_GDC_V14_0_0_OBJ&quot;,
+        &quot;sources&quot;: [
+          &quot;camera/post/gdc/pablo-hw-api-gdc-v1400.c&quot;,
+          &quot;camera/post/gdc/pablo-hw-reg-gdc-v1400.h&quot;
+        ],
+        &quot;versioned_source_pattern&quot;: &quot;camera/post/gdc/pablo-hw-(?:api|reg)-gdc-v\\d+\\.[ch]$&quot;
+      }
+    ],
+    &quot;selectors&quot;: [],
+    &quot;literals&quot;: []
+  },
+  &quot;protected_sources&quot;: [
+    &quot;exynos/external-modules/camera/camera/post/gdc/pablo-hw-api-gdc-v1400.c&quot;,
+    &quot;exynos/external-modules/camera/camera/post/gdc/pablo-hw-reg-gdc-v1400.h&quot;
+  ],
+  &quot;review_variants&quot;: [
+    &quot;ERD9965 (4K)&quot;,
+    &quot;ERD9965_16K&quot;
+  ],
+  &quot;evidence&quot;: [
+    &quot;camera/post/gdc/Makefile: GDC IP object selection independent of Pablo family&quot;,
+    &quot;camera/BUILD.bazel: camera.pablo-gdc CONFIG_CAMERA_PP_GDC_* branches&quot;,
+    &quot;erd9965 4K/16K fragments: GDC module, IP version and VOTF adapter&quot;
+  ],
+  &quot;component&quot;: &quot;gdc&quot;,
+  &quot;scope_include&quot;: [
+    &quot;exynos/external-modules/camera/camera/post/gdc/*&quot;,
+    &quot;exynos/external-modules/camera/camera/testing/kunit/post/*gdc*&quot;,
+    &quot;exynos/external-modules/camera/BUILD.bazel&quot;,
+    &quot;exynos/external-modules/camera/camera/Kconfig&quot;,
+    &quot;exynos/device/erd/erd9965/arch/arm64/configs/erd9965.fragment&quot;,
+    &quot;exynos/device/erd/erd9965/arch/arm64/configs/erd9965_16k.fragment&quot;,
+    &quot;exynos/external-modules/camera/camera/post/Makefile&quot;
+  ]
+}</code></pre></details></section>
+<section id="hooks"><h2>Client feedback와 commit 차단</h2><pre><code># 담당 개발자의 client 선택
+python3 driver_lint/scripts/install_claude.py --component gdc
+python3 driver_lint/scripts/install_agents.py --codex --component gdc
+python3 driver_lint/scripts/install_agents.py --opencode v1 --component gdc
+
+# 실제 Git checkout: clone마다 설치
+python3 driver_lint/scripts/install_git.py --component gdc
+python3 driver_lint/gdc/commit_gate.py</code></pre>
+<p>Claude/Codex는 <code>--component gdc</code> handler를 설치하며 OpenCode는 <code>driver-lint-gdc.js</code>로 구분합니다. 다른 담당 adapter는 유지하며 같은 selector의 --remove로 제거합니다. Codex는 바뀐 정의를 새 세션 /hooks에서 검토·신뢰해야 합니다. <a href="https://learn.chatgpt.com/docs/hooks">공식 hook 정책</a> · <a href="https://code.claude.com/docs/en/hooks">Claude 공식 hooks</a> · <a href="https://opencode.ai/docs/plugins/">OpenCode plugins</a></p>
+<p>OpenCode V2 runtime에서는 v1 대신 v2 adapter를 선택합니다. API 전환은 이전 API/동일 component로 --remove 후 설치합니다. 실제 OpenCode 실행 파일은 이 환경에 없습니다.</p>
+<p>Git은 pre-commit 하나를 사용하므로 선택한 담당 gate 또는 all을 연결합니다. 이전 owned driver gate로 교체할 때 중복 실행하지 않으며 기존 team hook은 먼저 실행하고 제거 시 복원합니다. commit gate는 Git index의 실제 source/settings와 등록된 build contract를 검사합니다. unstaged 수정으로 stage 오류를 숨길 수 없고 commit --only의 임시 index도 읽습니다. Hook은 --no-verify로 우회할 수 있으므로 서버 CI가 필수입니다. <a href="https://git-scm.com/docs/githooks">Git 공식 hooks</a></p>
+<p class="note">현재 release root는 Git 저장소가 없어 실제 Git hook은 미설치입니다. 임시 실제 Git 저장소에서 담당별 commit 차단을 검증했습니다.</p></section>
+<section id="ci"><h2>필수 status: driver-lint-gdc</h2><pre><code># 서버가 보호된 base에서 준비한 bootstrap
+python3 -I &quot;$temporary/run_ci.py&quot; --root &quot;$PWD&quot; --base &quot;$base&quot; \
+  --component gdc --format json \
+  --output driver_lint/gdc/reports/ci-gate.json</code></pre>
+<p>서버가 준비한 protected/base bootstrap을 실행하고 충분히 fetch한 review base를 지정합니다. 제출 branch의 엔진을 실행하지 않고 승인된 엔진/catalog/checkpatch로 committed BASE..HEAD와 이 담당의 제출된 policy/profile/build 계약을 검사합니다. CI의 설정은 committed HEAD에서 읽습니다. 이 담당 common policy를 approved revision에 고정하며 HW profile 선택은 근거와 review로 변경할 수 있습니다.</p>
+<p>cross-driver branch는 각 담당의 required job으로 모든 변경을 검증합니다. common engine/catalog는 도구 담당, gdc/config와 HW profile은 해당 driver 담당이 리뷰합니다. Shared metadata는 양쪽 담당을 배정하고 필요한 양쪽 승인은 리뷰 서버의 절차로 요구합니다. GitHub CODEOWNERS 여러 명만으로 두 팀 모두의 승인이 강제되지는 않습니다. <a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners">공식 CODEOWNERS 설명</a></p>
+<p>도구 변경은 별도 reviewed maintenance job의 server-approved runner-ref를 사용합니다. PR 입력으로 runner SHA/skip/pass override를 선택하지 않습니다. multi-repository Android repo는 repository별 scope와 승인된 manifest 기반 통합 CI를 준비해야 하며, 이 gate는 독립 Git index들을 자동 합치지 않습니다.</p></section>
+<section id="rules"><h2>공유 engine 규칙 · 담당 범위에 적용</h2><p>이 패키지의 layer/scope와 HW domain에 적용되는 규칙만 실행됩니다. 아래 severity는 현재 담당 policy 기준입니다. GDC 전용 core register/4K rule은 Pablo IS 문서에서 제외합니다. compiler AST/effective preprocessor나 HW specification 의미를 검증하지 않습니다.</p><article id="rule-ARCH001"><h3>ARCH001 · production에서 .c include 금지 <small>error</small></h3><dl><dt>목적</dt><dd>구현 파일을 포함하면 모듈 경계와 translation unit이 합쳐집니다.</dd><dt>탐지</dt><dd>testing 이외 C/H의 literal #include 경로가 .c로 끝남</dd><dt>수정</dt><dd>공개 header에 선언하고 Makefile/DDK source에 구현을 연결하세요.</dd><dt>한계</dt><dd>KUnit의 기존 .c include는 허용하며 macro include는 해석하지 않습니다.</dd></dl></article><article id="rule-ARCH002"><h3>ARCH002 · 상위 계층의 SFR 직접 의존 금지 <small>error</small></h3><dl><dt>목적</dt><dd>core/ischain/interface가 register layout에 결합되면 HW API 교체가 어려워집니다.</dd><dt>탐지</dt><dd>core, ischain, gdc-core, interface에서 is-sfr/pablo-sfr/pablo-hw-reg header include</dd><dt>수정</dt><dd>해당 IP의 공통 HW API header를 사용하고 register 접근은 하위 구현으로 옮기세요.</dd><dt>한계</dt><dd>파일명과 경로 기반 규칙이며 hw-control의 기존 SFR 의존은 별도로 금지하지 않습니다.</dd></dl></article><article id="rule-ARCH003"><h3>ARCH003 · GDC core의 register 접근 금지 <small>error</small></h3><dl><dt>목적</dt><dd>V4L2 scheduling/buffer/PM 계층은 camerapp_hw_* 인터페이스를 호출해야 합니다.</dd><dt>탐지</dt><dd>gdc-core의 readl/writel/ioread/iowrite, PMIO_SET/GET, GDC_SET/GET, pmio_read/write/field_read/write</dd><dt>수정</dt><dd>선택한 profile의 HW API 구현에 register 동작을 넣고 공통 pablo-hw-api-gdc.h의 계약으로 호출하세요.</dd><dt>한계</dt><dd>DMA/resource mapping API는 허용합니다. 임의 alias 또는 pointer MMIO 우회는 AST 검사 대상입니다.</dd></dl></article><article id="rule-ARCH004"><h3>ARCH004 · HW API에서 상위 manager 의존 금지 <small>error</small></h3><dl><dt>목적</dt><dd>HW API가 device/group/video manager를 알면 제어 흐름이 역전됩니다.</dd><dt>탐지</dt><dd>hw-api/gdc-api가 policy.upper_layer_headers의 header를 포함</dd><dt>수정</dt><dd>필요한 작은 parameter/type을 API 인자로 전달하세요. 기존 pablo-gdc.h와 is-hw.h는 허용합니다.</dd><dt>한계</dt><dd>기존 HW API가 공유하는 상위처럼 보이는 모든 type을 일괄 금지하지 않습니다.</dd></dl></article><article id="rule-ARCH005"><h3>ARCH005 · production에서 test 전용 의존 금지 <small>error</small></h3><dl><dt>목적</dt><dd>테스트의 fixture/mock이 실 드라이버에 들어가는 것을 막습니다.</dd><dt>탐지</dt><dd>testing 외부에서 단순한 positive KUnit guard 없이 testing/, kunit/test.h, kunit/mock.h, *-kunit-test.* include</dd><dt>수정</dt><dd>test helper는 testing 아래에 두고 production 지원 코드는 명확한 KUnit config guard로 제한하세요.</dd><dt>한계</dt><dd>KUNIT_EXPORT_SYMBOL과 기존 #if IS_ENABLED(CONFIG_PABLO_KUNIT_TEST)는 허용합니다. 복잡한 전처리 식은 평가하지 않습니다.</dd></dl></article><article id="rule-ARCH006"><h3>ARCH006 · IP API와 register layout의 호환성 검사 <small>error</small></h3><dl><dt>목적</dt><dd>각 IP의 구현과 register layout을 그 HW에 맞게 연결합니다. Pablo family와 IP 버전은 독립입니다.</dd><dt>탐지</dt><dd>profile.version_domains의 implementation_pattern/register_pattern으로 추출한 버전의 불일치</dd><dt>수정</dt><dd>해당 IP의 HW spec/build 근거로 register header를 선택하세요. 재사용이 필요한 경우 profile의 register_compatibility에 versions/reason/evidence를 기록하세요.</dd><dt>한계</dt><dd>등록된 IP의 explicit include만 검사합니다. 조건부 분기 및 HW spec의 실제 호환성은 평가하지 않습니다.</dd></dl></article><article id="rule-ARCH007"><h3>ARCH007 · 과제 선택 외 family/IP 구현 변경 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>여러 HW 버전이 함께 있어 다른 과제의 구현을 수정할 수 있습니다.</dd><dt>탐지</dt><dd>수정 경로의 version_domains.path_pattern 버전이 selected_versions 또는 선택 IP의 문서화된 compatible register 밖인 경우</dd><dt>수정</dt><dd>활성 profile과 실제 선택 경로를 확인하세요. 차기 HW 과제이면 profile을 갱신하고, 여러 과제에 대한 의도적인 수정이면 영향 범위를 설명하세요.</dd><dt>한계</dt><dd>warning이며 새 버전 자체를 금지하지 않습니다. audit에서는 발행하지 않으며 profile에 등록한 version domain만 검사합니다.</dd></dl></article><article id="rule-ARCH008"><h3>ARCH008 · 공통 코드의 HW family 결합 및 비호환 include 검사 <small>error</small></h3><dl><dt>목적</dt><dd>공통 API/정책과 HW별 parameter/config layout을 분리하고 버전 간 계약 혼합을 확인합니다.</dd><dt>탐지</dt><dd>공통 계층의 explicit family include, family 구현의 다른 family include, 선택된 IP 구현의 profile.camera_families 밖 include</dd><dt>수정</dt><dd>공통 코드는 공통 header/API를 사용하고 HW별 구현은 해당 profile의 family를 사용하세요. 의도적인 family dispatch/reuse는 common_family_selectors 또는 include_compatibility에 근거를 기록하세요.</dd><dt>한계</dt><dd>explicit 경로만 검사합니다. 컴파일러 include search path와 조건부 분기는 평가하지 않습니다. 공통/API 계약의 정당한 변경은 별도 리뷰 대상입니다.</dd></dl></article><article id="rule-STYLE001"><h3>STYLE001 · 줄 끝 공백 <small>warning</small></h3><dl><dt>목적</dt><dd>불필요한 diff를 줄입니다.</dd><dt>탐지</dt><dd>변경/추가된 줄의 trailing space/tab</dd><dt>수정</dt><dd>해당 줄 끝의 공백만 제거하세요.</dd><dt>한계</dt><dd>원본 전체의 공백을 자동 정리하지 않습니다.</dd></dl></article><article id="rule-STYLE002"><h3>STYLE002 · space만 사용한 기본 들여쓰기 <small>warning</small></h3><dl><dt>목적</dt><dd>Linux driver는 기본 들여쓰기에서 tab 8칸을 사용합니다.</dd><dt>탐지</dt><dd>변경된 C/H 줄이 8칸 이상의 space로 시작하고 continuation/comment로 보이지 않음</dd><dt>수정</dt><dd>주변 코드와 맞춰 기본 indent를 tab으로 바꾸고 continuation 정렬은 유지하세요.</dd><dt>한계</dt><dd>continuation은 lexical 추정입니다. checkpatch와 reviewer 판단을 함께 사용하세요.</dd></dl></article><article id="rule-STYLE003"><h3>STYLE003 · 지나치게 긴 줄 <small>warning</small></h3><dl><dt>목적</dt><dd>리뷰 화면에서 제어 흐름을 쉽게 읽도록 합니다.</dd><dt>탐지</dt><dd>tab 8칸 확장 후 policy.max_line_length(100) 초과하는 변경 줄. 명시된 SFR/setfile/network table 경로는 제외</dd><dt>수정</dt><dd>자연스러운 인자/조건 경계에서 줄을 나누세요. kernel .clang-format은 ColumnLimit 80입니다.</dd><dt>한계</dt><dd>100은 review 경고 기준입니다. 표 경로는 줄 길이만 제외하며 변경 자체는 REVIEW001로 검토합니다. checkpatch는 자체 기준을 그대로 적용합니다.</dd></dl></article><article id="rule-STYLE004"><h3>STYLE004 · CRLF 및 단독 CR 금지 <small>error</small></h3><dl><dt>목적</dt><dd>소스의 LF line ending을 유지해 대규모 diff를 피합니다.</dd><dt>탐지</dt><dd>변경된 줄 또는 새 파일에 CR byte 포함</dd><dt>수정</dt><dd>LF로 저장하세요.</dd><dt>한계</dt><dd>기존 CR이 그대로인 줄은 새 위반으로 보고하지 않습니다.</dd></dl></article><article id="rule-STYLE005"><h3>STYLE005 · merge conflict marker <small>error</small></h3><dl><dt>목적</dt><dd>미해결 충돌은 소스를 손상합니다.</dd><dt>탐지</dt><dd>줄 처음의 &lt;&lt;&lt;&lt;&lt;&lt;&lt;, =======, &gt;&gt;&gt;&gt;&gt;&gt;&gt;, ||||||| marker</dd><dt>수정</dt><dd>충돌을 해결하고 실제 의도한 코드를 남기세요.</dd><dt>한계</dt><dd>일부 separator comment는 marker처럼 보일 수 있습니다.</dd></dl></article><article id="rule-STYLE006"><h3>STYLE006 · SPDX license 유지 <small>warning</small></h3><dl><dt>목적</dt><dd>새 소스와 header의 기존 kernel license 관례를 유지합니다.</dd><dt>탐지</dt><dd>C/H의 첫 5줄에서 SPDX-License-Identifier가 없음</dd><dt>수정</dt><dd>주변 파일과 적합한 SPDX 식별자를 확인해서 첫 줄에 추가하세요.</dd><dt>한계</dt><dd>license 적합성을 법적으로 판정하지 않습니다. 기존 누락은 회귀 비교로 분리합니다.</dd></dl></article><article id="rule-STYLE007"><h3>STYLE007 · 파일 끝 LF <small>warning</small></h3><dl><dt>목적</dt><dd>기본 텍스트 파일 형태를 유지합니다.</dd><dt>탐지</dt><dd>비어 있지 않은 파일이 LF로 끝나지 않음</dd><dt>수정</dt><dd>파일 마지막에 newline 하나를 추가하세요.</dd><dt>한계</dt><dd>빈 파일은 해당 경고 대상이 아닙니다.</dd></dl></article><article id="rule-STYLE008"><h3>STYLE008 · 기존 naming prefix와 함수 길이 <small>warning</small></h3><dl><dt>목적</dt><dd>함수 이름과 책임의 크기를 일정하게 유지합니다.</dd><dt>탐지</dt><dd>GDC core/HW API의 새로 추가된 함수 이름이 gdc_/camerapp_/pablo_/__gdc_와 다르거나 새/길이가 변경된 함수가 120줄을 초과</dd><dt>수정</dt><dd>주변 prefix를 따르고 여러 책임이 있는 긴 함수는 의미 있는 helper로 분리하세요.</dd><dt>한계</dt><dd>lexical 함수 추출이며 macro 선언/복잡한 #if 조합을 놓칠 수 있습니다. 기존 긴 함수가 줄어도 threshold를 초과하면 review warning이 발행될 수 있습니다.</dd></dl></article><article id="rule-STYLE009"><h3>STYLE009 · 기존 source encoding 유지 <small>error</small></h3><dl><dt>목적</dt><dd>원본 is-cis-4ha-setB.h의 CP949 주석을 유지하며 agent의 무관한 encoding 변환을 감지합니다.</dd><dt>탐지</dt><dd>새 파일이 UTF-8이 아니거나 기존 non-ASCII source가 UTF-8/CP949 사이에서 encoding 변경</dd><dt>수정</dt><dd>새 파일은 UTF-8로 만들고 legacy 파일 수정은 원래 encoding을 유지하세요. 의도적인 변환은 별도 리뷰 변경으로 다루세요.</dd><dt>한계</dt><dd>UTF-8 먼저, CP949 다음 순서로 decode합니다. 두 encoding 모두 decode 실패 또는 NUL byte는 운영 오류(exit 2)입니다.</dd></dl></article><article id="rule-SAFE001"><h3>SAFE001 · 새로운 BUG/panic 금지 <small>error</small></h3><dl><dt>목적</dt><dd>잘못된 입력이나 HW 오류가 시스템 전체 중단으로 이어지지 않게 합니다.</dd><dt>탐지</dt><dd>production 변경의 BUG(), BUG_ON(), panic() 호출</dd><dt>수정</dt><dd>오류 return, 제한된 WARN 및 기존 recovery 경로를 사용하세요.</dd><dt>한계</dt><dd>기존 호출을 일괄 변경하지 않습니다. 테스트 경로는 제외합니다.</dd></dl></article><article id="rule-SAFE002"><h3>SAFE002 · hard IRQ에서 sleep 가능 호출 <small>warning</small></h3><dl><dt>목적</dt><dd>hard IRQ handler의 sleep은 context 오류를 유발합니다.</dd><dt>탐지</dt><dd>irqreturn_t 함수에서 mutex_lock, wait, msleep/usleep, schedule, copy_*_user, GFP_KERNEL allocation</dd><dt>수정</dt><dd>hard IRQ에서 상태만 처리하고 threaded IRQ/workqueue로 sleep 동작을 옮기세요.</dd><dt>한계</dt><dd>threaded IRQ도 irqreturn_t를 쓰므로 warning입니다. runtime context와 call graph는 확인하지 않습니다.</dd></dl></article><article id="rule-SAFE003"><h3>SAFE003 · spinlock 영역의 sleep 가능 호출 <small>warning</small></h3><dl><dt>목적</dt><dd>atomic 영역에서 blocking 동작을 검토하게 합니다.</dd><dt>탐지</dt><dd>동일 함수의 lexical spin_lock 이후 spin_unlock 전 sleep 가능 호출</dd><dt>수정</dt><dd>lock 보호 대상과 sleep 동작을 분리하고 IRQ/atomic context를 확인하세요.</dd><dt>한계</dt><dd>분기/별칭/외부 helper를 분석하지 않는 휴리스틱입니다. correctness 증명이 아닙니다.</dd></dl></article><article id="rule-SAFE004"><h3>SAFE004 · 무한 register polling 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>HW가 응답하지 않을 때 reset/stream 경로가 정지하지 않도록 합니다.</dd><dt>탐지</dt><dd>while(1), while(true), for(;;) 본문에 register read가 있으면서 timeout/break/return 단서가 없음</dd><dt>수정</dt><dd>기존 bounded polling 또는 read_poll_timeout 계열을 사용하세요.</dd><dt>한계</dt><dd>조건부 while 루프의 실제 종료를 증명하지 않으며 loop lexical body만 봅니다.</dd></dl></article><article id="rule-SAFE005"><h3>SAFE005 · IRQ handler의 직접 고빈도 로그 <small>warning</small></h3><dl><dt>목적</dt><dd>per-frame interrupt의 printk는 timing과 성능을 흔들 수 있습니다.</dd><dt>탐지</dt><dd>irqreturn_t 함수의 pr_info/pr_err/printk/dev_info/dev_err 직접 호출</dd><dt>수정</dt><dd>기존 level별 debug 또는 ratelimited log를 사용하고 장애 진단 필요성을 설명하세요.</dd><dt>한계</dt><dd>간접 호출과 driver log wrapper의 runtime 설정은 평가하지 않습니다.</dd></dl></article><article id="rule-SAFE006"><h3>SAFE006 · pointer/DMA 주소 narrowing cast <small>warning</small></h3><dl><dt>목적</dt><dd>arm64와 16K variant에서 주소 잘림을 검토하게 합니다.</dd><dt>탐지</dt><dd>(u32)/(unsigned int)로 addr/dva/iova/dma/pointer 이름을 cast</dd><dt>수정</dt><dd>dma_addr_t/uintptr 크기와 HW high/low address helper를 확인하세요.</dd><dt>한계</dt><dd>변수 이름 기반 warning이며 합법적인 low 32bit 추출도 포함될 수 있습니다.</dd></dl></article><article id="rule-SAFE007"><h3>SAFE007 · GDC core의 마법수 4K page size <small>warning</small></h3><dl><dt>목적</dt><dd>OS page size와 HW buffer granule를 구분하고 과제의 page-size variants에 대응합니다.</dd><dt>탐지</dt><dd>gdc-core에서 ALIGN/round_up/round_down/PTR_ALIGN의 두 번째 인자가 4096/0x1000</dd><dt>수정</dt><dd>PAGE_SIZE 또는 문서화된 HW granule 상수를 사용하세요.</dd><dt>한계</dt><dd>HW granule가 4K인 경우 reviewer가 근거를 확인해야 합니다.</dd></dl></article><article id="rule-SAFE008"><h3>SAFE008 · runtime PM 결과 처리 <small>warning</small></h3><dl><dt>목적</dt><dd>runtime resume 실패 뒤 register 접근이 일어나지 않게 합니다.</dd><dt>탐지</dt><dd>단독 statement로 pm_runtime_get_sync/pm_runtime_resume_and_get 결과를 버림</dd><dt>수정</dt><dd>return 값을 검사하고 실패 시 해당 API의 PM usage count 정리를 확인하세요.</dd><dt>한계</dt><dd>get_sync와 resume_and_get의 실패 semantics는 다릅니다. cleanup을 자동 검증하지 않습니다.</dd></dl></article><article id="rule-SAFE009"><h3>SAFE009 · user copy 결과 처리 <small>warning</small></h3><dl><dt>목적</dt><dd>부분 복사 및 fault가 정상 입력으로 처리되는 것을 막습니다.</dd><dt>탐지</dt><dd>단독 statement로 copy_from_user/copy_to_user 결과를 버림</dd><dt>수정</dt><dd>복사되지 않은 byte 수를 처리하고 적절한 -EFAULT를 반환하세요.</dd><dt>한계</dt><dd>wrapper 내부의 결과 처리와 .ops 간접 호출은 분석하지 않습니다.</dd></dl></article><article id="rule-SAFE010"><h3>SAFE010 · DMA mapping 결과 처리 <small>warning</small></h3><dl><dt>목적</dt><dd>DMA mapping 실패 시 잘못된 HW 주소를 programming하지 않도록 합니다.</dd><dt>탐지</dt><dd>dma_map_single/page 호출이 있는 함수에서 dma_mapping_error가 보이지 않음</dd><dt>수정</dt><dd>실제 mapping error 검사와 unwind를 확인하세요.</dd><dt>한계</dt><dd>다른 helper에서 검사할 수 있으므로 warning입니다. dma_map_sg는 별도 semantics입니다.</dd></dl></article><article id="rule-SAFE011"><h3>SAFE011 · allocation overflow 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>개수 곱셈의 overflow를 줄이는 kernel allocation API를 사용합니다.</dd><dt>탐지</dt><dd>kmalloc/kzalloc 첫 인자가 곱셈을 포함하고 sizeof 사용</dd><dt>수정</dt><dd>kmalloc_array/kcalloc 또는 struct_size/array_size를 검토하세요.</dd><dt>한계</dt><dd>Pablo allocator wrapper는 패턴에 포함되지 않습니다.</dd></dl></article><article id="rule-BUILD001"><h3>BUILD001 · 신규 C source의 build 연결 <small>warning</small></h3><dl><dt>목적</dt><dd>코드를 추가하고 실제 모듈 source에 연결하지 않는 실수를 줄입니다.</dd><dt>탐지</dt><dd>신규 production .c의 filename 및 .o가 camera Makefile/BUILD.bazel에 literal로 없음</dd><dt>수정</dt><dd>Kbuild/DDK 양쪽 선택을 확인하세요. glob 기반이라면 실제 resolved source를 확인하세요.</dd><dt>한계</dt><dd>Bazel glob과 Starlark evaluation을 실행하지 않습니다. 경고는 누락 증명이 아닙니다.</dd></dl></article><article id="rule-BUILD002"><h3>BUILD002 · build/config 변경의 영향 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>한 SoC 수정이 다른 board/module 선택까지 바꾸지 않도록 합니다.</dd><dt>탐지</dt><dd>Makefile, Kconfig, BUILD.bazel, *.bzl, *.fragment의 실제 변경 또는 삭제</dd><dt>수정</dt><dd>활성 profile.review_variants의 source/config/.ko 영향을 리뷰 설명에 기록하세요.</dd><dt>한계</dt><dd>lint만으로 Kleaf/Kconfig의 최종 평가 결과를 보장하지 않습니다.</dd></dl></article><article id="rule-BUILD003"><h3>BUILD003 · 과제별 fragment 요구 선택 검사 <small>error</small></h3><dl><dt>목적</dt><dd>각 board/variant에 맞는 모듈·IP·adapter 선택을 일관되게 연결합니다.</dd><dt>탐지</dt><dd>profile.fragments의 파일별 requirements 누락, 값 변경 또는 중복 설정</dd><dt>수정</dt><dd>과제의 HW/build 요구에 맞춰 fragment와 profile을 함께 갱신하세요.</dd><dt>한계</dt><dd>등록된 fragment만 검사합니다. fragment merge 후 effective .config는 별도 빌드 검사 대상입니다.</dd></dl></article><article id="rule-BUILD004"><h3>BUILD004 · fragment의 선택 밖 IP 구현 enable 검사 <small>error</small></h3><dl><dt>목적</dt><dd>profile이 지정한 구현 선택과 실제 config의 불일치를 확인합니다.</dd><dt>탐지</dt><dd>profile.fragments.exclusive_groups의 pattern에 맞지만 selected에 없는 config를 y/m로 설정</dd><dt>수정</dt><dd>해당 HW에 맞는 config를 선택하고 profile requirements/exclusive_groups와 일치시키세요.</dd><dt>한계</dt><dd>IP별 선택은 과제 데이터입니다. 검증된 복수 구현 선택은 selected에 명시할 수 있으며 link/symbol 검증은 빌드가 담당합니다.</dd></dl></article><article id="rule-BUILD005"><h3>BUILD005 · 과제별 Kconfig·Kbuild·Bazel 연결 검사 <small>error</small></h3><dl><dt>목적</dt><dd>선택한 family/IP 버전과 실제 header/source/config 연결을 일관되게 확인합니다.</dd><dt>탐지</dt><dd>profile.build_contracts의 Kconfig dependency, Kbuild object, DDK True branch, board selector, select/glob literal mapping 불일치 또는 보호 경로 삭제</dd><dt>수정</dt><dd>해당 HW의 profile과 Kconfig/Makefile/Bazel을 함께 검토하고 scan --profile-only로 등록된 연결 전체를 확인하세요.</dd><dt>한계</dt><dd>Bazel literal 구조만 읽고 select/glob을 실행하지 않습니다. 동적 표현은 검사 실패로 보고합니다. 모든 IP/빌드 경로의 완전한 모델이 아니며 등록 범위 밖은 별도 분석이 필요합니다.</dd></dl></article><article id="rule-ABI001"><h3>ABI001 · 공유 header 변경 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>parameter/metadata/firmware/HW API 변경은 호출자나 firmware와 함께 검토해야 합니다.</dd><dt>탐지</dt><dd>policy.public_header_patterns의 C header가 변경/추가/삭제됨</dd><dt>수정</dt><dd>caller, struct layout, firmware contract와 UAPI 영향 유무를 설명하고 필요한 ABI/build 검사를 수행하세요.</dd><dt>한계</dt><dd>모든 공유 header가 GKI ABI 또는 userspace ABI인 것은 아닙니다.</dd></dl></article><article id="rule-ABI002"><h3>ABI002 · export symbol 변경 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>DDK 모듈 간 계약과 KUnit 노출 방식의 변화를 표시합니다.</dd><dt>탐지</dt><dd>추가/삭제된 코드 줄에 EXPORT_SYMBOL[_GPL] 또는 KUNIT_EXPORT_SYMBOL</dd><dt>수정</dt><dd>consumer와 symbol list/ABI 정책을 확인하세요. KUnit export와 production export를 구분하세요.</dd><dt>한계</dt><dd>GKI ABI dump 비교를 대신하지 않습니다.</dd></dl></article><article id="rule-REVIEW001"><h3>REVIEW001 · register/setfile table 변경 검토 <small>warning</small></h3><dl><dt>목적</dt><dd>register default, field width와 sensor tuning 값은 일반 style lint로 검증할 수 없습니다.</dd><dt>탐지</dt><dd>register layer 또는 filename에 setfile/setA/setB/setC가 있는 변경/삭제</dd><dt>수정</dt><dd>HW register 문서, sensor mode 및 해당 KUnit/실기 검증 결과를 리뷰에 연결하세요.</dd><dt>한계</dt><dd>의미/값/bit width 검증은 수행하지 않습니다.</dd></dl></article><article id="rule-REVIEW002"><h3>REVIEW002 · 큰 diff의 목적 분리 <small>warning</small></h3><dl><dt>목적</dt><dd>agent의 광범위한 재포맷이나 책임 혼합을 리뷰에서 발견하기 쉽게 합니다.</dd><dt>탐지</dt><dd>파일별 added+deleted line 수가 policy.max_patch_lines(400) 초과</dd><dt>수정</dt><dd>동작 변경과 대규모 정리를 나누고 필요성을 설명하세요.</dd><dt>한계</dt><dd>큰 generated table 변경이 합당할 수 있으므로 warning입니다.</dd></dl></article></section>
+<section id="verified"><h2>검증과 남은 확인</h2><p>전체 regression + owner isolation 테스트: PASS: 115개 / failures 0 / errors 0 / skipped 0</p>
+<p>담당 전체 audit: 62 files / 1 existing errors / 558 existing warnings. 기존 진단을 포함하는 현황이며 정상 변경 gate와 다릅니다.</p>
+<p>서로 다른 driver source/profile/build/fragment 오류가 상대 gate를 실패시키지 않는지, future GDC IP 변경이 Pablo family를 변경하지 않는지, component hook/installer/CI 분리를 테스트했습니다. 원본 driver는 수정하지 않았습니다.</p>
+<p>Login된 Claude/Codex UI/자동 재작업, Codex trust와 OpenCode 실제 runtime은 미검증입니다. 서버 branch protection 미설정. Driver compile/KUnit/IRQ/PM/DMA/HW 실기는 미실행입니다. lint PASS가 이 동작의 정확성을 의미하지 않습니다.</p>
+<p><a href="../../docs/validation.json">검증 receipt</a> · <span title="소스 릴리스 경로: ../../reports/tests.txt">전체 테스트 로그</span> · <a href="../../docs/index.html">공통 상세 운영·source 근거</a></p></section>
+<footer><small>GDC linter 1.3 · Independent owner policy + shared engine · 2026-10-09</small></footer>
+</main></body></html>

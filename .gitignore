@@ -1,0 +1,7 @@
+# Keep this repository limited to the lint tool.
+/exynos/
+/kernel-6.12/
+**/.state/
+**/reports/
+__pycache__/
+*.py[cod]

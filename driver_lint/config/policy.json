@@ -1,0 +1,153 @@
+{
+  "schema_version": 2,
+  "profile": "profiles/s947b.json",
+  "extensions": [
+    ".c",
+    ".h",
+    ".bzl",
+    ".bazel",
+    ".fragment"
+  ],
+  "filenames": [
+    "Makefile",
+    "Kconfig"
+  ],
+  "exclude": [
+    "*/.git/*",
+    "*/__pycache__/*"
+  ],
+  "max_line_length": 100,
+  "max_function_lines": 120,
+  "max_patch_lines": 400,
+  "long_line_exempt_paths": [
+    "*/hardware/sfr/*",
+    "*/post/*/pablo-hw-reg-*.h",
+    "*/post/*/sfr/*",
+    "*/is-vra-net-array*.h",
+    "*/sensor/*/*setfile*.h",
+    "*/sensor/*/*setA*.h",
+    "*/sensor/*/*setB*.h",
+    "*/sensor/*/*setC*.h"
+  ],
+  "snapshot": "driver_lint/.state/reference.json",
+  "checkpatch": {
+    "script": "kernel-6.12/scripts/checkpatch.pl",
+    "timeout_seconds": 45,
+    "ignore": [
+      "FILE_PATH_CHANGES",
+      "COMMIT_MESSAGE",
+      "COMMIT_COMMENT_SYMBOL",
+      "SPDX_LICENSE_TAG"
+    ]
+  },
+  "layer_patterns": [
+    {
+      "name": "test",
+      "patterns": [
+        "testing/*"
+      ]
+    },
+    {
+      "name": "register",
+      "patterns": [
+        "hardware/sfr/*",
+        "post/*/pablo-hw-reg-*.h",
+        "post/*/sfr/*"
+      ]
+    },
+    {
+      "name": "gdc-api",
+      "patterns": [
+        "post/gdc/pablo-hw-api-gdc-v*.c",
+        "post/gdc/pablo-gdc-hdr10p.c"
+      ]
+    },
+    {
+      "name": "gdc-core",
+      "patterns": [
+        "post/gdc/*"
+      ]
+    },
+    {
+      "name": "hw-api",
+      "patterns": [
+        "hardware/api/*",
+        "post/*/pablo-hw-api-*.c"
+      ]
+    },
+    {
+      "name": "hw-control",
+      "patterns": [
+        "hardware/*"
+      ]
+    },
+    {
+      "name": "ischain",
+      "patterns": [
+        "ischain/*"
+      ]
+    },
+    {
+      "name": "sensor",
+      "patterns": [
+        "sensor/*",
+        "csi/*"
+      ]
+    },
+    {
+      "name": "library",
+      "patterns": [
+        "lib/*",
+        "icpu/*"
+      ]
+    },
+    {
+      "name": "interface",
+      "patterns": [
+        "interface/*",
+        "include/*"
+      ]
+    },
+    {
+      "name": "vendor",
+      "patterns": [
+        "vendor/*"
+      ]
+    },
+    {
+      "name": "core",
+      "patterns": [
+        "*"
+      ]
+    }
+  ],
+  "raw_register_layers": [
+    "gdc-core"
+  ],
+  "forbid_register_include_layers": [
+    "core",
+    "ischain",
+    "gdc-core",
+    "interface"
+  ],
+  "upper_layer_headers": [
+    "is-device-ischain.h",
+    "is-device-sensor.h",
+    "is-groupmgr.h",
+    "is-resourcemgr.h",
+    "is-video.h"
+  ],
+  "public_header_patterns": [
+    "include/*",
+    "post/gdc/pablo-hw-api-gdc.h",
+    "interface/*-interface.h"
+  ],
+  "severity_overrides": {},
+  "suppressions": [],
+  "common_family_include_layers": [
+    "core",
+    "gdc-core",
+    "library",
+    "interface"
+  ]
+}
